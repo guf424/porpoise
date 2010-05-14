@@ -95,8 +95,9 @@ class LayarPOIServer {
 			} else {
 				$nextPageKey = NULL;
 			}
-		
-			$this->sendResponse($pois, $morePages, $nextPageKey);
+			$radius = $layer->getRadius();
+			
+			$this->sendResponse($pois, $morePages, $nextPageKey, $radius);
 		} catch (Exception $e) {
 			$this->sendErrorResponse(self::ERROR_CODE_DEFAULT, $e->getMessage());
 		}
@@ -111,7 +112,7 @@ class LayarPOIServer {
 	 *
 	 * @return void
 	 */
-	protected function sendResponse(array $pois, $morePages = FALSE, $nextPageKey = NULL) {
+	protected function sendResponse(array $pois, $morePages = FALSE, $nextPageKey = NULL, $radius = NULL) {
 		$response = array();
 		$response["morePages"] = $morePages;
 		$response["nextPageKey"] = (string)$nextPageKey;
@@ -119,6 +120,10 @@ class LayarPOIServer {
 		$response["errorCode"] = 0;
 		$response["errorString"] = "ok";
 		$response["hotspots"] = array();
+		if ($radius) {
+			$radius *= 1.25; // extend radius with 25% to avoid far away POI's dropping off when location changes
+			$response["radius"] = intval($radius);
+		}
 		foreach ($pois as $poi) {
 			$i = count($response["hotspots"]);
 			$response["hotspots"][$i] = $poi->toArray();

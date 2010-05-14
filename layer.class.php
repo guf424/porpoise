@@ -42,7 +42,7 @@ class Layer {
 	protected $hasMorePOIs;
 	protected $nextPageKey;
 	
-	protected $radius = 0;
+	protected $radius = null;
 
 	/**
 	 * Constructor
@@ -92,20 +92,25 @@ class Layer {
 		}
 
 		if (($offset == 0 || // always reload for 1st page request
-				!$this->session_restore($filter->userID)) && // or when no session data exists
-					!empty($this->poiConnector)) {
-						$this->nearbyPOIs = $this->poiConnector->getPOIs($filter);
-						$this->session_save($filter->userID);
+			!$this->session_restore($filter->userID)) && // or when no session data exists
+				!empty($this->poiConnector)) {
+
+					$pois = $this->poiConnector->getPOIs($filter);
+					
+					foreach($pois as $poi) {
+						if ($poi->distance > $this->radius) {
+							$this->radius = $poi->distance;
+						}
+					}
+					$this->nearbyPOIs = $pois;
+					$this->session_save($filter->userID);
 		}
 		// iterate over POIs and determine max distance
 		// TODO: do something sensible with this
 		// current implementation adds all POIs in the order they are
-		// retrieved, while accorcing to the spec max 50 POIs are displayed.
+		// retrieved, while according to the spec max 50 POIs are displayed.
 		// So limit POIs to max. 50, optionally after sorting by distance.
 		// Maybe make the sorting order a config setting
-//		if ($poi->distance > $this->radius) {
-//			$this->radius = $poi->distance;
-//		}
 				
 		$this->hasMorePOIs = FALSE;
 		$this->nextPageKey = NULL;
@@ -145,6 +150,7 @@ class Layer {
 		}
 		if (isset($_SESSION['nearbyPOIs'])) {
 			$this->nearbyPOIs = $_SESSION['nearbyPOIs'];
+			$this->radius = (isset($_SESSION['radius'])) ? $_SESSION['radius'] : null;
 			return true;
 		} else {
 			return false;
@@ -156,6 +162,7 @@ class Layer {
 		$this->session_init($sid);
 		$_SESSION['nearbyPOIs'] = $this->nearbyPOIs;
 		$_SESSION['layerName'] = $this->layerName;
+		$_SESSION['radius'] = $this->radius;
 		session_commit();
 	}
 	
@@ -163,6 +170,7 @@ class Layer {
 		$this->session_init($sid);
 		unset($_SESSION['nearbyPOIs']);
 		unset($_SESSION['layerName']);
+		unset($_SESSION['radius']);
 		session_commit();
 	}
 	
@@ -176,6 +184,26 @@ class Layer {
 		return $this->nearbyPOIs;
 	}
 
+		
+	/**
+	 * Get the Layer name
+	 *
+	 * @return string $layerName
+	 */
+	public function getLayerName() {
+		return $this->layerName;
+	}
+		
+	/**
+	 * Get the max. radius plus some margin
+	 *
+	 * @return int $radius
+	 */
+	public function getRadius() {
+		return $this->radius;
+	}
+	
+	
 	/**
 	 * Check if there are more POIs than returned (for additional pages)
 	 *
