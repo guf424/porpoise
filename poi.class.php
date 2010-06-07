@@ -233,7 +233,11 @@ abstract class POI extends Arrayable {
 	public $title = NULL;
 	/** @var int POI type (for custom icons) */
 	public $type = NULL;
-
+	/** @var bool doNotIndex */
+	public $doNotIndex = false;
+	/** @var bool inFocus */
+	public $inFocus = false;
+	
 	/**
 	 * Constructor
 	 *

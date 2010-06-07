@@ -80,7 +80,7 @@ class Layer {
 	 *
 	 * Filter $filter
 	 *
-	 * @return void
+	 * @return int number of POIs
 	 */
 	public function determineNearbyPOIs(Filter $filter) {
 		$this->nearbyPOIs = array();
@@ -114,21 +114,23 @@ class Layer {
 				
 		$this->hasMorePOIs = FALSE;
 		$this->nextPageKey = NULL;
-
-		if (count($this->nearbyPOIs) - $offset > self::POIS_PER_PAGE) {
+		$numPois = count($this->nearbyPOIs);
+		
+		if ($numPois - $offset > self::POIS_PER_PAGE) {
 			$this->hasMorePOIs = TRUE;
 			$this->nextPageKey = ($offset / self::POIS_PER_PAGE) + 1;
 		}
-		if ($offset > count($this->nearbyPOIs)) {
+		if ($offset > $numPois) {
 			// no POIs on this page
 			$nearbyPOIs = array();
 		} else {
-			$limit = min(self::POIS_PER_PAGE, count($this->nearbyPOIs) - $offset);
+			$limit = min(self::POIS_PER_PAGE, $numPois - $offset);
 			$this->nearbyPOIs = array_slice($this->nearbyPOIs, $offset, $limit);
 		}
 		if (!$this->hasMorePOIs) {
 			$this->session_delete($filter->userID);
 		}
+		return $numPois;
 	}
 
 	// NOTE: session ID needs to be set correctly, see also WebApp class
@@ -144,7 +146,7 @@ class Layer {
 	protected function session_restore($sid) {
 		$this->session_init($sid);
 		// sanity check: are we requesting POIs from the same layer?
-		if ($_SESSION['layerName'] != $this->layerName) {
+		if (@$_SESSION['layerName'] != $this->layerName) {
 			$this->session_delete($sid);
 			return false;
 		}

@@ -74,16 +74,16 @@ class LayarPOIServer {
 	 * @return void
 	 */
 	public function handleRequest(LayarLogger $loghandler = null) {
+		$filter = $this->buildFilter();
 		try {
 			$this->validateRequest();
-			$filter = $this->buildFilter();
 			
+			$layer = $this->layers[$_REQUEST["layerName"]];
+			$numPois = $layer->determineNearbyPOIs($filter);
 			if ($loghandler) {
-				$loghandler->log($_REQUEST["layerName"], $filter);
+				$loghandler->log($filter, array('numpois' => $numPois));
 			}
 	
-			$layer = $this->layers[$_REQUEST["layerName"]];
-			$layer->determineNearbyPOIs($filter);
 			$pois = $layer->getNearbyPOIs();
 			if (count($pois) == 0) {
 				$this->sendErrorResponse(self::ERROR_CODE_NO_POIS);
@@ -99,6 +99,10 @@ class LayarPOIServer {
 			
 			$this->sendResponse($pois, $morePages, $nextPageKey, $radius);
 		} catch (Exception $e) {
+			if ($loghandler) {
+				$loghandler->log($filter, array('errorMessage' => $e->getMessage()));
+			}
+	
 			$this->sendErrorResponse(self::ERROR_CODE_DEFAULT, $e->getMessage());
 		}
 	}
@@ -125,15 +129,34 @@ class LayarPOIServer {
 			$response["radius"] = intval($radius);
 		}
 		foreach ($pois as $poi) {
-			$i = count($response["hotspots"]);
-			$response["hotspots"][$i] = $poi->toArray();
+			// test if current POI was requested and should be in focus
+			if ($poi->id == @$this->filter->requestedPoiId) {
+				$poi->inFocus = true;
+			}
+			
+			$aPoi = $poi->toArray();
+			
+			// strip out optional fields to cut on bandwith
+			if (!$aPoi['inFocus']) unset($aPoi['inFocus']);
+			if (!$aPoi['alt']) unset($aPoi['alt']);
+			if (!$aPoi['relativeAlt']) unset($aPoi['relativeAlt']);
+			if (!$aPoi['doNotIndex']) unset($aPoi['doNotIndex']);
+			foreach($aPoi['actions'] as &$action) {
+				if(!$action['autoTriggerRange']) {
+					unset($action['autoTriggerRange']);
+					unset($action['autoTriggerOnly']);
+				}
+			}
 			// upscale coordinate values and truncate to int because of inconsistencies in Layar API
 			// (requests use floats, responses use integers?)
-			$response["hotspots"][$i]["lat"] = (int)($response["hotspots"][$i]["lat"] * 1000000);
-			$response["hotspots"][$i]["lon"] = (int)($response["hotspots"][$i]["lon"] * 1000000);
+			$aPoi["lat"] = (int)($aPoi["lat"] * 1000000);
+			$aPoi["lon"] = (int)($aPoi["lon"] * 1000000);
 			// fix some types that are not strings
-			$response["hotspots"][$i]["type"] = (int)$response["hotspots"][$i]["type"];
-			$response["hotspots"][$i]["distance"] = (float)$response["hotspots"][$i]["distance"];
+			$aPoi["type"] = (int)$aPoi["type"];
+			$aPoi["distance"] = (float)$aPoi["distance"];
+			
+			$i = count($response["hotspots"]);
+			$response["hotspots"][$i] = $aPoi;
 		}
 
 		/* Set the proper content type */
@@ -233,7 +256,12 @@ class LayarPOIServer {
 			case "pageKey":
 			case "lang":
 			case "countryCode":
+			case "layerName":				
+			case "version":	
 				$result->$key = $value;
+				break;
+			case "requestedPoiId":				
+				$result->$key = ($value == 'None') ? null : $value;
 				break;
 			case "timestamp":
 			case "accuracy":
@@ -283,11 +311,16 @@ class LayarPOIServer {
 				break;
 			}
 		}
+		// As of 20100601 Format is: Layar/x.y [OS name]/x.y.z ([Brand] [Model])
+		if (isset($_SERVER['HTTP_USER_AGENT'])) {
+			$result->userAgent = $_SERVER['HTTP_USER_AGENT'];
+		}
 
 		if (!empty($_COOKIE[$_REQUEST["layerName"] . "Id"])) {
 			$result->porpoiseUID = $_COOKIE[$_REQUEST["layerName"] . "Id"];
 		}
 
+		$this->filter = $result;
 		return $result;
 	}
 }

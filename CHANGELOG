@@ -1,3 +1,15 @@
+
+- added new request parameters:
+	- requestedPoiId
+	- version
+	- userAgent	
+- added new response parameters
+	- doNotIndex
+	- inFocus
+- if requestedPoiId is set, the corresponding POI gets flagged with "inFocus: true"
+- trim out optional response parameters
+- changes to log handler
+
 = Branch 0.71+oAuth
 - moved layers directory one level up, so deployment files for layers are
   no longer part of the main PorPOISe distribution tree, see INSTALL
