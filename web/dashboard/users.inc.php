@@ -17,4 +17,5 @@
  * @subpackage Dashboard
  */
 $_access = array();
+$_access["jens"] = '$1$uCzwOd/S$5ftzsbZ2VHQO801VlfxV70';
 $_access["default"] = '';

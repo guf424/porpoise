@@ -1,4 +1,3 @@
-
 - added new request parameters:
 	- requestedPoiId
 	- version
@@ -6,8 +5,9 @@
 - added new response parameters
 	- doNotIndex
 	- inFocus
+- added logic to always try to return requestedPoiId, even when not in range
 - if requestedPoiId is set, the corresponding POI gets flagged with "inFocus: true"
-- trim out optional response parameters
+- trim out optional response parameters to save bandwidth
 - changes to log handler
 
 = Branch 0.71+oAuth

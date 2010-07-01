@@ -98,9 +98,19 @@ class SQLPOIConnector extends POIConnector {
 				)
 			) AS distance
 			FROM POI";
-			if (!empty($filter->radius)) {
-				$sql .= " HAVING distance < (" . addslashes($filter->radius) . " + " . addslashes($filter->accuracy) . ")";
-			}
+
+			if (!empty($filter->requestedPoiId) || !empty($filter->radius)) {
+				$sql .= " HAVING";
+				if (!empty($filter->requestedPoiId)) {
+					$sql .= " id='" . addslashes($filter->requestedPoiId) . "'";
+					if (!empty($filter->radius)) {
+						$sql .= " AND";
+					}
+				}
+				if (!empty($filter->radius)) {
+					$sql .= " distance < (" . addslashes($filter->radius) . " + " . addslashes($filter->accuracy) . ")";
+				}
+ 			}
 			$sql .= " ORDER BY distance ASC";
 		}
 
@@ -168,7 +178,11 @@ class SQLPOIConnector extends POIConnector {
 					throw new Exception("Invalid dimension: " . $row["dimension"]);
 				}
 
-				if ($this->passesFilter($poi, $filter)) {
+				if (!empty($filter) && !empty($filter->requestedPoiId) && $filter->requestedPoiId == $poi["id"]) {
+					// always return the requested POI at the top of the list to
+					// prevent cutoff by the 50 POI response limit
+					array_unshift($result, $poi);
+				} else if ($this->passesFilter($poi, $filter)) {
 					$result[] = $poi;
 				}
 			}
@@ -286,7 +300,7 @@ class SQLPOIConnector extends POIConnector {
 	 */
 	protected function savePOI(POI $poi) {
 		$pdo = $this->getPDO();
-		$poiFields = array("alt","attribution","dimension","id","imageURL","lat","lon","line2","line3","line4","relativeAlt","title","type");
+		$poiFields = array("alt","attribution","dimension","id","imageURL","lat","lon","line2","line3","line4","relativeAlt","title","type","doNotIndex","showSmallBiw","showBiwOnClick");
 		
 		// is this a new POI or not?
 		$isNewPOI = TRUE;

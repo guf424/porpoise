@@ -11,6 +11,10 @@
  *
  * @package PorPOISe
  */
+
+/**
+ * Include POIConnector interface
+ */
 require_once("poiconnector.interface.php");
 
 /**

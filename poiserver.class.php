@@ -54,6 +54,33 @@ class LayarPOIServer {
 
 	protected $requiredFields = array("userId", "developerId", "developerHash", "timestamp", "layerName", "lat", "lon");
 	protected $optionalFields = array("accuracy", "RADIOLIST", "SEARCHBOX_1", "SEARCHBOX_2", "SEARCHBOX_3", "CUSTOM_SLIDER_1", "CUSTOM_SLIDER_2", "CUSTOM_SLIDER_3", "pageKey", "oath_consumer_key", "oauth_signature_method", "oauth_timestamp", "oauth_nonce", "oauth_version", "oauth_signature", "radius", "alt");
+	protected $optionalPOIFieldsDefaults = array(
+		"inFocus" => FALSE,
+		"alt" => NULL,
+		"relativeAlt" => NULL,
+		"doNotIndex" => FALSE,
+		"showSmallBiw" => TRUE,
+		"showBiwOnClick" => TRUE
+	);
+	protected $optionalResponseFieldsDefaults = array(
+		"refreshInterval" => NULL,
+		"refreshDistance" => NULL,
+		"fullRefresh" => TRUE,
+		"action" => NULL,
+		"responseMessage" => NULL
+	);
+	protected $optionalActionFieldsDefaults = array(
+		"autoTriggerRange" => NULL,
+		"autoTriggerOnly" => NULL,
+		"contentType" => NULL,
+		"method" => "GET",
+		"activityType" => NULL,
+		"params" => NULL,
+		"closeBiw" => FALSE,
+		"showActivity" => TRUE,
+		"activityMessage" => NULL
+	);
+
 
 	/**
 	 * Add a layer to the server
@@ -135,16 +162,25 @@ class LayarPOIServer {
 			}
 			
 			$aPoi = $poi->toArray();
-			
-			// strip out optional fields to cut on bandwith
-			if (!$aPoi['inFocus']) unset($aPoi['inFocus']);
-			if (!$aPoi['alt']) unset($aPoi['alt']);
-			if (!$aPoi['relativeAlt']) unset($aPoi['relativeAlt']);
-			if (!$aPoi['doNotIndex']) unset($aPoi['doNotIndex']);
-			foreach($aPoi['actions'] as &$action) {
-				if(!$action['autoTriggerRange']) {
-					unset($action['autoTriggerRange']);
-					unset($action['autoTriggerOnly']);
+			// strip out optional fields to cut on bandwidth
+			foreach ($this->optionalPOIFieldsDefaults as $field => $defaultValue) {
+				// strip param from reponse if equal to default
+				//
+				// A note on the @ operator here:
+				// there is a slight difference in PHP between an undefined variable
+				// and one that has been defined and set to NULL. There is NO clean way
+				// right now to distinguish between the two as isset() returns FALSE
+				// on both cases, empty() returns TRUE on both cases and no other
+				// function will take an undefined variable without raising a warning
+				if (@$aPoi[$field] == $defaultValue) {
+					unset($aPoi[$field]);
+				}
+			}
+			foreach($aPoi["actions"] as &$action) {
+				foreach($this->optionalActionFieldsDefaults as $field => $defaultValue) {
+					if (@$action[$field] == $defaultValue) {
+						unset($action[$field]);
+					}
 				}
 			}
 			// upscale coordinate values and truncate to int because of inconsistencies in Layar API
@@ -155,8 +191,14 @@ class LayarPOIServer {
 			$aPoi["type"] = (int)$aPoi["type"];
 			$aPoi["distance"] = (float)$aPoi["distance"];
 			
-			$i = count($response["hotspots"]);
-			$response["hotspots"][$i] = $aPoi;
+			$response["hotspots"][] = $aPoi;
+		}
+
+		// strip out optional global parameters
+		foreach ($this->optionalResponseFieldsDefaults as $field => $defaultValue) {
+			if (@$response[$field] == $defaultValue) {
+				unset($response[$field]);
+			}
 		}
 
 		/* Set the proper content type */

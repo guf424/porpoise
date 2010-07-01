@@ -34,7 +34,7 @@ error_reporting(E_ALL | E_STRICT);
 
 /* open config file */
 try {
-	$config = new PorPOISeConfig("../layers/config.xml");
+	$config = new PorPOISeConfig("layers/config.xml");
 } catch (Exception $e) {
 	printf("Error loading configuration: %s", $e->getMessage());
 }

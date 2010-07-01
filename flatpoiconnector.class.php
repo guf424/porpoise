@@ -93,7 +93,7 @@ class FlatPOIConnector extends POIConnector {
 			foreach ($poi as $key => $value) {
 				if (!isset($row[$key])) {
 					// check for non-required values
-					if (in_array($key, array("dimension", "distance", "alt", "relativeAlt", "actions", "imageURL"))) {
+					if (in_array($key, array("dimension", "distance", "alt", "relativeAlt", "actions", "imageURL", "doNotIndex", "showSmallBiw", "showBiwOnClick"))) {
 						// start next iteration
 						continue;
 					}
@@ -120,6 +120,11 @@ class FlatPOIConnector extends POIConnector {
 					case "lon":
 						$value = (float)$row[$key];
 						break;
+					case "showBiwOnClick":
+					case "showSmallBiw":
+					case "doNotIndex":
+						$value = (bool)(string)$row[$key];
+						break;
 					default:
 						$value = (string)$row[$key];
 						break;
@@ -129,6 +134,10 @@ class FlatPOIConnector extends POIConnector {
 			}
 			if (empty($filter)) {
 				$result[] = $poi;
+			} else if (!empty($filter->requestedPoiId) && $filter->requestedPoiId == $poi["id"]) {
+				// always return the requested POI at the top of the list to
+				// prevent cutoff by the 50 POI response limit
+				array_unshift($result, $poi);
 			} else {
 				$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->lat), deg2rad($poi->lon));
 				if ((empty($radius) || $poi->distance < $radius + $accuracy) && $this->passesFilter($poi, $filter)) {
@@ -148,7 +157,7 @@ class FlatPOIConnector extends POIConnector {
 	 * @return mixed FALSE on failure, TRUE or a string on success
 	 */
 	public function storePOIs(array $pois, $mode = "update", $asString = FALSE) {
-		$fields = array("actions", "alt", "attribution", "dimension", "id", "imageURL", "lat", "lon", "line2", "line3", "line4", "object", "relativeAlt", "title", "transform", "type");
+		$fields = array("actions", "alt", "attribution", "dimension", "id", "imageURL", "lat", "lon", "line2", "line3", "line4", "object", "relativeAlt", "title", "transform", "type", "doNotIndex", "showSmallBiw", "showBiwOnClick");
 		$actionFields = array("label", "uri", "autoTriggerRange", "autoTriggerOnly");
 		$objectFields = array("baseURL", "full", "reduced", "icon", "size");
 		$transformFields = array("angle", "rel", "scale");

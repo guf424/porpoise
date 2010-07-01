@@ -19,11 +19,7 @@ require_once("httprequest.class.php");
 require_once("porpoiseconfig.class.php");
 
 /** html template */
-if (file_exists('../layers/template.php')) {
-	require_once("../layers/template.php");
-} else {
-	require_once("template.php");
-}
+require_once("../layers/template.php");
 
 /** User persistence classes */
 require_once("user.class.php");

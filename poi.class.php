@@ -61,19 +61,104 @@ abstract class Arrayable {
 	}
 }
 
-/**
- * Class to store a POI action
+/** Class to store an action. Can be a "whole layer" action or a POI action
  *
  * @package PorPOISe
  */
-class POIAction extends Arrayable {
-	/** Default action label. Only for  flat files */
+class Action extends Arrayable {
+	/** Default action label. Only for flat files */
+	/* LEGACY */
 	const DEFAULT_ACTION_LABEL = "Do something funky";
 
 	/** @var string URI that should be invoked by activating this action */
 	public $uri = NULL;
 	/** @var string Label to show in the interface */
 	public $label = NULL;
+	/** @var string Content type */
+	public $contentType = NULL;
+	/** @var string HTTP method */
+	public $method = "GET";
+	/** @var int Activity type. Possible types are currently undocumented */
+	public $activityType = NULL;
+	/** @var string Which parameters to include in the call, comma-separated */
+	public $params = NULL;
+	/** @var bool Close the BIW after the action has finished */
+	public $closeBiw = FALSE;
+	/** @var bool Show activity indicator while action completes */
+	public $showActivity = TRUE;
+	/** @var string Message to show instead of default spinner */
+	public $activityMessage = NULL;
+	
+	/**
+	 * Constructor
+	 *
+	 * If $source is a string, it must be a URI and a default label will be
+	 * assigned to it
+	 * If $source is an array it is expected to contain elements "label"
+	 * and "uri".
+	 * If $source is an object, it is expected to have members "label" and
+	 * "uri".
+	 *
+	 * @param mixed $source
+	 */
+	public function __construct($source = NULL) {
+		if (empty($source)) {
+			return;
+		}
+
+		$optionalFields = array("contentType", "method", "activityType", "params", "closeBiw", "showActivity", "activityMessage");
+
+		if (is_string($source)) {
+			$this->label = self::DEFAULT_ACTION_LABEL;
+			$this->uri = $source;
+		} else if (is_array($source)) {
+			$this->label = $source["label"];
+			$this->uri = $source["uri"];
+			foreach ($optionalFields as $field) {
+				if (isset($source[$field])) {
+					switch($field) {
+					case "activityType":
+						$this->$field = (int)$source[$field];
+						break;
+					case "closeBiw":
+					case "showActivity":
+						$this->$field = (bool)$source[$field];
+						break;
+					default:
+						$this->$field = (string)$source[$field];
+						break;
+					}
+				}
+			}
+		} else {
+			$this->label = (string)$source->label;
+			$this->uri = (string)$source->uri;
+			foreach ($optionalFields as $field) {
+				if (isset($source->$field)) {
+					switch($field) {
+					case "activityType":
+						$this->$field = (int)$source->$field;
+						break;
+					case "closeBiw":
+					case "showActivity":
+						$this->$field = (bool)(string)$source->$field;
+						break;
+					default:
+						$this->$field = (string)$source->$field;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
+ * Class to store a POI action
+ *
+ * @package PorPOISe
+ */
+class POIAction extends Action {
 	/** @var int Range for action autotrigger */
 	public $autoTriggerRange = NULL;
 	/** @var bool Only act on autotrigger */
@@ -96,19 +181,16 @@ class POIAction extends Arrayable {
 			return;
 		}
 
+		parent::__construct($source);
+
 		if (is_string($source)) {
-			$this->label = self::DEFAULT_ACTION_LABEL;
-			$this->uri = $source;
+			return;
 		} else if (is_array($source)) {
-			$this->label = $source["label"];
-			$this->uri = $source["uri"];
 			if (!empty($source["autoTriggerRange"])) {
 				$this->autoTriggerRange = (int)$source["autoTriggerRange"];
 				$this->autoTriggerOnly = (bool)$source["autoTriggerOnly"];
 			}
 		} else {
-			$this->label = (string)$source->label;
-			$this->uri = (string)$source->uri;
 			if (!empty($source->autoTriggerRange)) {
 				$this->autoTriggerRange = (int)$source->autoTriggerRange;
 				$this->autoTriggerOnly = (bool)((string)$source->autoTriggerOnly);
@@ -116,6 +198,7 @@ class POIAction extends Arrayable {
 		}
 	}
 }
+
 
 /**
  * Holds transformation information for multi-dimensional POIs
@@ -234,9 +317,13 @@ abstract class POI extends Arrayable {
 	/** @var int POI type (for custom icons) */
 	public $type = NULL;
 	/** @var bool doNotIndex */
-	public $doNotIndex = false;
+	public $doNotIndex = FALSE;
 	/** @var bool inFocus */
-	public $inFocus = false;
+	public $inFocus = FALSE;
+	/** @var bool Show the small BIW on the bottom of the screen */
+	public $showSmallBiw = TRUE;
+	/** @var show the big BIW when the POI is tapped */
+	public $showBiwOnClick = TRUE;
 	
 	/**
 	 * Constructor

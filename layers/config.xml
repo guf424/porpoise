@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <porpoise-configuration>
- <developer-id>12345</developer-id>
- <developer-key>your key here</developer-key>
+ <developer-id>1819</developer-id>
+ <developer-key>b0mix2td</developer-key>
  <connectors>
   <connector><name>XMLPOIConnector</name><file>xmlpoiconnector.class.php</file></connector>
   <connector><name>SQLPOIConnector</name><file>sqlpoiconnector.class.php</file></connector>
@@ -14,17 +14,15 @@ Sample tab-delimited layer configuration
   <layer>
    <name>example</name>
    <connector>FlatPOIConnector</connector>
-   <source>../layers/example.tab</source>
+   <source>layers/example.tab</source>
   </layer>
 -->
-<!--
 Sample XML layer configuration
   <layer>
    <name>example</name>
    <connector>XMLPOIConnector</connector>
-   <source>../layers/example.xml</source>
+   <source>layers/example.xml</source>
   </layer>
--->
 <!--
 Sample XML+XSL layer configuration
   <layer>
@@ -32,7 +30,7 @@ Sample XML+XSL layer configuration
    <connector>XMLPOIConnector
     <options><stylesheet>xsl/yoursheet.xsl</stylesheet></options>
 	 </connector>
-   <source>../layers/example.xml</source>
+   <source>layers/example.xml</source>
   </layer>
 -->
 <!--
