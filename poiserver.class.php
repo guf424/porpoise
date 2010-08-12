@@ -165,14 +165,7 @@ class LayarPOIServer {
 			// strip out optional fields to cut on bandwidth
 			foreach ($this->optionalPOIFieldsDefaults as $field => $defaultValue) {
 				// strip param from reponse if equal to default
-				//
-				// A note on the @ operator here:
-				// there is a slight difference in PHP between an undefined variable
-				// and one that has been defined and set to NULL. There is NO clean way
-				// right now to distinguish between the two as isset() returns FALSE
-				// on both cases, empty() returns TRUE on both cases and no other
-				// function will take an undefined variable without raising a warning
-				if (@$aPoi[$field] == $defaultValue) {
+				if (array_key_exists($field, $aPoi) && $aPoi[$field] == $defaultValue) {
 					unset($aPoi[$field]);
 				}
 			}
