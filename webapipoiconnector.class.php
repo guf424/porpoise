@@ -60,16 +60,32 @@ abstract class WebApiPOIConnector extends WebApp implements iPOIConnector {
 		}
 	}
 
+	/**
+	 * Get a Layar response
+	 *
+	 * @param Filter $filter
+	 *
+	 * @return LayarResponse
+	 *
+	 * @throws Exception
+	 */
+	public function getLayarResponse(Filter $filter = NULL) {
+		$result = new LayarResponse();
+		$result->hotspots = $this->getPOIs($filter);
+		return $result;
+	}
+
+
 	public function storePOIs(array $pois, $mode = "update") {
-		// N.A.
+		throw new Exception(__METHOD__ . " not implemented.");
 	}
 
 	public function deletePOI($poiID) {
-		// N.A.
+		throw new Exception(__METHOD__ . " not implemented.");
 	}
 
 	public function setOption($name, $value) {
-		// N.A.
+		throw new Exception(__METHOD__ . " not implemented.");
 	}
 
 

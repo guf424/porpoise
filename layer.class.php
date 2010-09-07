@@ -54,9 +54,9 @@ class Layer {
 	/**
 	 * Set a POI connector
 	 *
-	 * @param POIConnector $poiConnector
+	 * @param iPOIConnector $poiConnector
 	 */
-	public function setPOIConnector(POIConnector $poiConnector) {
+	public function setPOIConnector(iPOIConnector $poiConnector) {
 		$this->poiConnector = $poiConnector;
 	}
 

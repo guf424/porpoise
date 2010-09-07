@@ -27,6 +27,7 @@ class WebApp {
 
 	protected $http; // OAuth aware http object
 	protected $user; // User persistence object
+	protected $script_name = null; // Use this to override script name for method getActionUrl()
 	protected $definition; // LayerDefinition
 
 	private $sessionStarted = false;
@@ -142,7 +143,7 @@ class WebApp {
 					// in method call.
 					
 					// poor man's reflection; call public method if it exists in called (sub)class
-					// ptovate and protected methods are not exposed
+					// private and protected methods are not exposed
 					if (method_exists($this, $action)) {
 						$meth = new ReflectionMethod($this, $action);
 						if (!$meth->isPublic()) {
@@ -196,15 +197,19 @@ class WebApp {
 	 *
 	 * @return string $url link to call action on current layer
 	 * @param object $action
+	 * @param array $opts optional named query parameters
 	 */
-	protected function getActionUrl($action) {
+	protected function getActionUrl($action, array $opts = array()) {
 		$url = sprintf('%s://%s%s?layerName=%s&action=%s',
 			(isset($_SERVER['HTTPS']) ? 'https' : 'http'),
 			$_SERVER["HTTP_HOST"],
-			$_SERVER['SCRIPT_NAME'],
+			(($this->script_name) ? $this->script_name : $_SERVER['SCRIPT_NAME']),
 			$this->layerName,
 			urlencode($action)
 		);
+		foreach ($opts as $q => $v) {
+			$url .= '&' . $q . '=' . urlencode($v);
+		}
 		return $url;
 	}
 
