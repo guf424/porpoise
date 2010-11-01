@@ -2,7 +2,7 @@
 
 /*
  * PorPOISe
- * Copyright 2009 SURFnet BV
+ * Copyright 2009 SURFnet BV / 2009-2010 SQUIO
  * Released under a permissive license (see LICENSE)
  */
 
@@ -18,16 +18,57 @@
  * @package PorPOISe
  */
 abstract class User {
+	/**
+	 * @var String Unique user ID, auto generated
+	 */
 	private $id = null;
+	
+	/**
+	 * @var String Layar User ID
+	 */
 	private $layar_uid = null;
+	
+	/**
+	 * @var String Application specific user ID
+	 */
 	private $app_uid = null;
+
+	/**
+	 * @var String Application specific username
+	 */
 	private $app_user_name = null;
+	
+	/**
+	 * @var String OAuth user token
+	 */
 	private $oauth_token = null;
+
+	/**
+	 * @var String OAuth user token secret
+	 */
 	private $oauth_token_secret = null;
+
+	/**
+	 * @var String last updated timestamp
+	 */
 	private $updated = null;
 
+	/**
+	 * Persist OAuth credentials
+	 *
+	 */
 	public abstract function save();
+	
+	/**
+	 * Look up user data by id or layar_uid.
+	 * It is assumed that both native ID and layar_uid are unique
+	 */
 	public abstract function getById($id);
+
+	/**
+	 * Delete persisted OAuth credentials
+	 *
+	 */
 	public abstract function delete();
 
     /**
@@ -206,18 +247,28 @@ abstract class User {
 
 /**
  * User - dummy implementation
- *
+ * WARNINGL this class does not provide data persistence! 
+ * 
  * @package PorPOISe
  */
 class DummyUser extends User {
 	
+	/**
+	 * This method does *NOT* save the user credentials
+	 * but may still be useful as long as only session
+	 * and cookie storage are used elsewhere.
+	 *
+	 */
 	public function save() {
-		throw new Exception('DummyUser does not support saving', 500);
+		// noop
 	}
 
+	/**
+	 * This method clears user credentials from
+	 * the session- or memory persistence.
+	 */
 	public function delete() {
 		$this->clear();
-		throw new Exception('DummyUser does not support saving', 500);
 	}
 
 	public function getById($id) {
