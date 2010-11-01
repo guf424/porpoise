@@ -34,6 +34,9 @@ require_once("poiconnector.class.php");
 require_once("sqlpoiconnector.class.php");
 require_once("xmlpoiconnector.class.php");
 require_once("flatpoiconnector.class.php");
+/** Web API and Web App */
+require_once("web-app.class.php");
+require_once("webapipoiconnector.class.php");
 
 /** Layer definition */
 require_once("layer.class.php");

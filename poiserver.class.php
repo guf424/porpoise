@@ -42,12 +42,13 @@ class LayarPOIServer {
 	// layers in this server
 	protected $layers = array();
 
-	protected $requiredRequestFields = array("userId", "timestamp", "layerName", "lat", "lon");
-	protected $optionalRequestFields = array("accuracy", "RADIOLIST", "SEARCHBOX_1", "SEARCHBOX_2", "SEARCHBOX_3", "CUSTOM_SLIDER_1", "CUSTOM_SLIDER_2", "CUSTOM_SLIDER_3", "pageKey", "oath_consumer_key", "oauth_signature_method", "oauth_timestamp", "oauth_nonce", "oauth_version", "oauth_signature", "radius", "alt");
+	protected $requiredRequestFields = array("userId", "layerName", "lat", "lon");
+	protected $optionalRequestFields = array("accuracy", "timestamp", "RADIOLIST", "SEARCHBOX_1", "SEARCHBOX_2", "SEARCHBOX_3", "CUSTOM_SLIDER_1", "CUSTOM_SLIDER_2", "CUSTOM_SLIDER_3", "pageKey", "oath_consumer_key", "oauth_signature_method", "oauth_timestamp", "oauth_nonce", "oauth_version", "oauth_signature", "radius", "alt");
 	protected $optionalPOIFieldsDefaults = array(
 		"inFocus" => FALSE,
 		"alt" => NULL,
 		"relativeAlt" => NULL,
+		"timestamp" => NULL,
 		"doNotIndex" => FALSE,
 		"showSmallBiw" => TRUE,
 		"showBiwOnClick" => TRUE
