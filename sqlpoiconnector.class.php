@@ -20,7 +20,7 @@
  *
  * @package PorPOISe
  */
-class SQLPOIConnector extends POIConnector {
+class SQLPOIConnector implements iPOIConnector  {
 	/** @var string DSN */
 	protected $source;
 	/** @var string username */
@@ -552,4 +552,9 @@ class SQLPOIConnector extends POIConnector {
 		$stmt->bindValue(":poiID", $poiID);
 		$stmt->execute();
 	}
+	
+	public function setOption($name, $value) {
+		// dummy
+	}
+
 }
