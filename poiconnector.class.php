@@ -22,7 +22,7 @@
  *
  * @package PorPOISe
  */
-abstract class POIConnector {
+abstract class POIConnector implements iPOIConnector {
 	/**
 	 * Constructor
 	 *
@@ -30,7 +30,7 @@ abstract class POIConnector {
 	 *
 	 * @param string $source
 	 */
-	public abstract function __construct($source);
+	// public abstract function __construct($source);
 
 	/**
 	 * Return POIs
@@ -44,7 +44,7 @@ abstract class POIConnector {
 	 *
 	 * @throws Exception
 	 */
-	public abstract function getPOIs(Filter $filter = NULL);
+	// public abstract function getPOIs(Filter $filter = NULL);
 
 	/**
 	 * Get a Layar response
@@ -71,7 +71,7 @@ abstract class POIConnector {
 	 * @return void
 	 */
 	public function storePOIs(array $pois, $mode = "update") {
-		throw new Exception("This method has not been implemented");
+		throw new Exception(__METHOD__ . " has not been implemented");
 	}
 
 	/**
@@ -88,7 +88,7 @@ abstract class POIConnector {
 	 * @throws Exception
 	 */
 	public function storeLayerProperties(LayarResponse $properties) {
-		throw new Exception("This method has not been implemented");
+		throw new Exception(__METHOD__ . " has not been implemented");
 	}
 
 	/**
@@ -100,7 +100,9 @@ abstract class POIConnector {
 	 *
 	 * @throws Exception If the source is invalid or the POI could not be deleted
 	 */
-	public abstract function deletePOI($poiID);
+	public function deletePOI($poiID) {
+		throw new Exception(__METHOD__ . " has not been implemented");
+	}
 
 	/**
 	 * Set a (connector-specific) option

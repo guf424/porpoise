@@ -19,4 +19,6 @@
  * by PORPOISE_CONFIG_PATH. Change this constant to where your config
  * is at.
  */
-define("PORPOISE_CONFIG_PATH", "config");
+ if (!defined('PORPOISE_CONFIG_PATH')) {
+ 	define("PORPOISE_CONFIG_PATH", "config");
+ }

@@ -20,7 +20,7 @@
  *
  * @package PorPOISe
  */
-class SQLPOIConnector implements iPOIConnector  {
+class SQLPOIConnector extends POIConnector  {
 	/** @var string DSN */
 	protected $source;
 	/** @var string username */

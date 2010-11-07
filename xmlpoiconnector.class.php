@@ -20,7 +20,7 @@
  *
  * @package PorPOISe
  */
-class XMLPOIConnector implements iPOIConnector {
+class XMLPOIConnector extends POIConnector {
 	const EMPTY_DOCUMENT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<layer><pois/></layer>";
 	/** @var string */
 	protected $source;
