@@ -298,8 +298,8 @@ class POIObject extends Arrayable {
 						break;
 					}
 					$this->$fieldName = (string)$source->$fieldName;
-					if (mb_detect_encoding($this->$fieldName, "UTF-8") == "UTF-8") {
-						$this->$field = utf8_decode($this->$fieldName);
+					if (mb_detect_encoding($source->$fieldName, "UTF-8") == "UTF-8") {
+						$this->$fieldName = utf8_decode($source->$fieldName);
 					}
 					break;
 				case "size":
