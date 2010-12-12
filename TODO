@@ -8,3 +8,4 @@ scratch sheet for ToDo's
 - centralize forced casting logic
   - allow NULL values for (certain?) integers
 - centralize/refactor default values
+- properly convert layer level actions to arrays and do parameter filtering on them

@@ -126,10 +126,15 @@ class FlatPOIConnector extends POIConnector {
 			}
 			if (empty($filter)) {
 				$result[] = $poi;
+			/*
+			 * by @jfdsmit to @jlapoutre on Dec 12 2010 this bypasses distance calculation
+			 * inclusion in the result set is handled below this if-block
+			 *
 			} else if (!empty($filter->requestedPoiId) && $filter->requestedPoiId == $poi["id"]) {
 				// always return the requested POI at the top of the list to
 				// prevent cutoff by the 50 POI response limit
 				array_unshift($result, $poi);
+			 */
 			} else {
 				$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->lat), deg2rad($poi->lon));
 				if (!empty($filter->requestedPoiId) && $filter->requestedPoiId == $poi["id"]) {
