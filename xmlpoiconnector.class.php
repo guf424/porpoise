@@ -93,7 +93,7 @@ class XMLPOIConnector extends POIConnector {
 					$result->$name = (bool)((string)$childNode);
 					break;
 				case "showMessage":
-					$result->$name = utf8_decode((string)$childNode);
+					$result->$name = (string)$childNode;
 					break;
 				case "action":
 					$result->actions[] = new Action($childNode);
@@ -188,7 +188,7 @@ class XMLPOIConnector extends POIConnector {
 						$value = (bool)(string)$child;
 						break;
 					default:
-						$value = utf8_decode((string)$child);
+						$value = (string)$child;
 						break;
 					}
 					$poi->$nodeName = $value;
@@ -377,7 +377,7 @@ class XMLPOIConnector extends POIConnector {
 
 		$relevantFields = array("refreshInterval", "refreshDistance", "fullRefresh", "showMessage");
 		foreach ($relevantFields as $fieldName) {
-			$simpleXML->$fieldName = utf8_encode($response->$fieldName);
+			$simpleXML->$fieldName = $response->$fieldName;
 		}
     foreach ($response->actions as $action) {
       if (empty($simpleXML->action)) {
@@ -390,7 +390,7 @@ class XMLPOIConnector extends POIConnector {
 				if ($actionField == "params") {
 					$simpleXML->action[$i]->$actionField = implode(",", $action->$actionField);
 				} else {
-	        $simpleXML->action[$i]->$actionField = utf8_encode($action->$actionField);
+	        $simpleXML->action[$i]->$actionField = $action->$actionField;
 				}
       }
     }
@@ -455,21 +455,21 @@ class XMLPOIConnector extends POIConnector {
 						if ($actionName == "params") {
 							$actionValue = implode(",", $actionValue);
 						}
-						$actionElement->addChild($actionName, utf8_encode(str_replace("&", "&amp;", $actionValue)));
+						$actionElement->addChild($actionName, str_replace("&", "&amp;", $actionValue));
 					}
 				}
 			} else if ($key == "transform") {
 				$transformElement = $poiElement->addChild("transform");
 				foreach(array("rel", "angle", "scale") as $elementName) {
-					$transformElement->addChild($elementName, utf8_encode(str_replace("&", "&amp;", $poi->transform->$elementName)));
+					$transformElement->addChild($elementName, str_replace("&", "&amp;", $poi->transform->$elementName));
 				}
 			} else if ($key == "object") {
 				$objectElement = $poiElement->addChild("object");
 				foreach(array("baseURL", "full", "reduced", "icon", "size") as $elementName) {
-					$objectElement->addChild($elementName, utf8_encode(str_replace("&", "&amp;", $poi->object->$elementName)));
+					$objectElement->addChild($elementName, str_replace("&", "&amp;", $poi->object->$elementName));
 				}
 			} else {
-				$poiElement->addChild($key, utf8_encode(str_replace("&", "&amp;", $value)));
+				$poiElement->addChild($key, str_replace("&", "&amp;", $value));
 			}
 		}
 		return $poiElement;

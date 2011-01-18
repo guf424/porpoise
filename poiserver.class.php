@@ -201,8 +201,6 @@ class LayarPOIServer {
 			}
 		}
 
-		/* UTF-8 encode the response */
-		$aResponse = utf8_encode_recursive($aResponse);
 		/* Set the proper content type */
 		header("Content-Type: application/json;charset=utf-8");
 
@@ -234,8 +232,6 @@ class LayarPOIServer {
 		$response["nextPageKey"] = NULL;
 		$response["morePages"] = FALSE;
 
-		/* UTF-8 encode the response */
-		$response = utf8_encode_recursive($response);
 		/* Set the proper content type */
 		header("Content-Type: application/json;encoding=utf-8");
 
