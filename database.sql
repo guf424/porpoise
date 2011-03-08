@@ -43,6 +43,33 @@ CREATE TABLE `Action` (
 SET character_set_client = @saved_cs_client;
 
 --
+-- Table structure for table `Animation`
+--
+
+DROP TABLE IF EXISTS `Animation`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Animation` (
+  `id` int(11) NOT NULL auto_increment,
+  `poiId` int(11) default NULL,
+	`event` varchar(50) NOT NULL,
+	`type` varchar(50) NOT NULL,
+	`length` int(11) NOT NULL,
+	`delay` int(11) default NULL,
+	`interpolation` varchar(50) default NULL,
+	`interpolationParam` double precision default NULL,
+	`persist` tinyint(1) default 0,
+	`repeat` tinyint(1) default 0,
+	`from` double precision default NULL,
+	`to` double precision default NULL,
+	`axis` varchar(50) default NULL,
+  PRIMARY KEY  (`id`),
+  KEY `poiId` (`poiId`),
+  CONSTRAINT `Animation_ibfk_1` FOREIGN KEY (`poiId`) REFERENCES `POI` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
+SET character_set_client = @saved_cs_client;
+
+--
 -- Table structure for table `Layer`
 --
 
@@ -57,7 +84,7 @@ CREATE TABLE `Layer` (
   `showMessage` varchar(1024) default NULL,
   `id` int(11) NOT NULL auto_increment,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
 SET character_set_client = @saved_cs_client;
 
 --
@@ -75,7 +102,7 @@ CREATE TABLE `Object` (
   `icon` varchar(255) default NULL,
   `size` int(11) default NULL,
   PRIMARY KEY  (`poiID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 SET character_set_client = @saved_cs_client;
 
 --
@@ -120,7 +147,7 @@ CREATE TABLE `Transform` (
   `scale` float default NULL,
   `poiID` int(11) NOT NULL,
   PRIMARY KEY  (`poiID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 SET character_set_client = @saved_cs_client;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

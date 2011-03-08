@@ -337,6 +337,13 @@ class Animation extends Arrayable {
 	/** @var vector (x,y,z assoicative array) axis for the animation */
 	public $axis = array("x" => NULL, "y" => NULL, "z" => NULL);
 
+	public function axisString() {
+		if ($this->axis["x"] === NULL || $this->axis["y"] === NULL || $this->axis["z"] === NULL) {
+			return "";
+		}
+		return sprintf("%s,%s,%s", $this->axis["x"], $this->axis["y"], $this->axis["z"]);
+	}
+	
 	public function set($key, $value) {
 		switch($key) {
 		case "axis":
@@ -458,6 +465,13 @@ abstract class POI extends Arrayable {
 							foreach ($source["actions"] as $sourceAction) {
 								$value[] = new POIAction($sourceAction);
 							}
+						} else if ($propertyName == "animations") {
+							$value = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
+							foreach ($source["animations"] as $event => $animations) {
+								foreach ($animations as $animation) {
+									$value[$event][] = new Animation($animation);
+								}
+							}
 						} else if ($propertyName == "object") {
 							$value = new POIObject($source["object"]);
 						} else if ($propertyName == "transform") {
@@ -492,6 +506,13 @@ abstract class POI extends Arrayable {
 							$value = array();
 							foreach ($source->actions as $sourceAction) {
 								$value[] = new POIAction($sourceAction);
+							}
+						} else if ($propertyName == "animations") {
+							$value = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
+							foreach ($source->animations as $event => $animations) {
+								foreach ($animations as $animation) {
+									$value[$event][] = new Animation($animation);
+								}
 							}
 						} else if ($propertyName == "object") {
 							$value = new POIObject($source->object);

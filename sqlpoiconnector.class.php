@@ -130,19 +130,29 @@ class SQLPOIConnector extends POIConnector  {
 				$pois[] = $row;
 			}
 			foreach ($pois as $i => $poi) {
-				$sql = "SELECT * FROM Action WHERE poiID=?";
+				$sql = "SELECT * FROM Action WHERE poiId=?";
 				$stmt = $pdo->prepare($sql);
 				$stmt->execute(array($poi["id"]));
 				$pois[$i]["actions"] = array();
 				while ($row = $stmt->fetch()) {
 					$pois[$i]["actions"][] = $row;
 				}
+
+				$sql = "SELECT * FROM Animation WHERE poiId=?";
+				$stmt = $pdo->prepare($sql);
+				$stmt->execute(array($poi["id"]));
+				$pois[$i]["animations"] = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
+				while ($row = $stmt->fetch()) {
+					$pois[$i]["animations"][$row["event"]][] = $row;
+				}
+
 				$sql = "SELECT * FROM Object WHERE poiID=?";
 				$stmt = $pdo->prepare($sql);
 				$stmt->execute(array($poi["id"]));
 				if ($row = $stmt->fetch()) {
 					$pois[$i]["object"] = $row;
 				}
+				
 				$sql = "SELECT * FROM Transform WHERE poiID=?";
 				$stmt = $pdo->prepare($sql);
 				$stmt->execute(array($poi["id"]));
@@ -221,6 +231,7 @@ class SQLPOIConnector extends POIConnector  {
 		}
 
 		$result->actions = $this->getLayerActions($filter);
+		$result->animations = $this->getLayerAnimations($filter);
 
 		$result->hotspots = $this->getPOIs($filter);
 
@@ -247,6 +258,25 @@ class SQLPOIConnector extends POIConnector  {
 	}
 
 	/**
+	 * Get a layer's animations
+	 *
+	 * @param Filter $filter
+	 *
+	 * @return Animation[][]
+	 */
+	protected function getLayerAnimations(Filter $filter = NULL) {
+		$pdo = $this->getPDO();
+		$sql = "SELECT * FROM Animation WHERE poiId IS NULL";	/** @todo nasty, gotta fix that later */
+		$stmt = $pdo->prepare($sql);
+		$stmt->execute();
+		$result = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
+		while ($row = $stmt->fetch()) {
+			$result[$row["event"]][] = new Animation($row);
+		}
+		return $result;
+	}
+
+	/**
 	 * Store POIs
 	 *
 	 * @param POI[] $pois
@@ -261,7 +291,7 @@ class SQLPOIConnector extends POIConnector  {
 
 			if ($mode == "replace") {
 				// cleanup!
-				$tables = array("POI", "Action", "Object", "Transform");
+				$tables = array("POI", "Action", "Animation", "Object", "Transform");
 				foreach ($tables as $table) {
 					$sql = "DELETE FROM " . $table;
 					$stmt = $pdo->prepare($sql);
@@ -330,26 +360,9 @@ class SQLPOIConnector extends POIConnector  {
 			}
 			$stmt->execute();
 
-      // store actions
-      //
-      // remove old actions
-      $sql = "DELETE FROM Action WHERE poiId IS NULL";
-      $stmt = $pdo->prepare($sql);
-      $stmt->execute();
-      // insert new actions
-      foreach ($response->actions as $action) {
-        $actionFields = array("label", "uri", "method", "contentType", "activityType", "params", "showActivity", "activityMessage");
-        $sql = "INSERT INTO Action (" . implode(",", $actionFields) . ",poiId) VALUES (:" . implode(",:", $actionFields) . ",NULL)";
-        $stmt = $pdo->prepare($sql);
-        foreach ($actionFields as $actionField) {
-					if ($actionField == "params") {
-						$stmt->bindValue(":" . $actionField, implode(",", $action->$actionField));
-					} else {
-						$stmt->bindValue(":" . $actionField, $action->$actionField);
-					}
-        }
-        $stmt->execute();
-      }
+			$this->saveActions(NULL, $response->actions);
+			$this->saveAnimations(NULL, $response->animations);
+
 		} catch (PDOException $e) {
 			throw new Exception("Database error: " . $e->getMessage());
 		}
@@ -462,6 +475,7 @@ class SQLPOIConnector extends POIConnector  {
 			$poi->id = $pdo->lastInsertId();
 		}
 		$this->saveActions($poi->id, $poi->actions);
+		$this->saveAnimations($poi->id, $poi->animations);
 		if ($poi->dimension > 1) {
 			$this->saveObject($poi->id, $poi->object);
 			$this->saveTransform($poi->id, $poi->transform);
@@ -482,9 +496,14 @@ class SQLPOIConnector extends POIConnector  {
 		$pdo = $this->getPDO();
 
 		// cleanup old
-		$sql = "DELETE FROM Action WHERE poiID=:poiID";
-		$stmt = $pdo->prepare($sql);
-		$stmt->bindValue(":poiID", $poiID);
+		if ($poiID !== NULL) {
+			$sql = "DELETE FROM Action WHERE poiId=:poiId";
+			$stmt = $pdo->prepare($sql);
+			$stmt->bindValue(":poiId", $poiID);
+		} else {
+			$sql = "DELETE FROM Action WHERE poiId IS NULL";
+			$stmt = $pdo->prepare($sql);
+		}
 		$stmt->execute();
 
 		// insert new actions
@@ -492,10 +511,61 @@ class SQLPOIConnector extends POIConnector  {
 			$sql = "INSERT INTO Action (poiID," . implode(",", $actionFields) . ") VALUES (:poiID,:" . implode(",:", $actionFields) . ")";
 			$stmt = $pdo->prepare($sql);
 			foreach ($actionFields as $actionField) {
-				$stmt->bindValue(":" . $actionField, $action->$actionField);
+				if ($actionField == "params") {
+					$stmt->bindValue(":" . $actionField, implode(",", $action->$actionField));
+				} else {
+					$stmt->bindValue(":" . $actionField, $action->$actionField);
+				}
 			}
 			$stmt->bindValue(":poiID", $poiID);
 			$stmt->execute();
+		}
+	}
+
+	/**
+	 * Save animations for a POI
+	 *
+	 * Replaces all previous animations for this POI
+	 *
+	 * @param int $poiID
+	 * @param POIAnimation[][] $animations
+	 * @return void
+	 */
+	protected function saveAnimations($poiID, array $animations) {
+		$animationFields = array("event", "type", "length", "delay", "interpolation", "interpolationParam", "persist", "`repeat`", "`from`", "`to`", "axis");
+		$pdo = $this->getPDO();
+
+		// cleanup old
+		if ($poiID !== NULL) {
+			$sql = "DELETE FROM Animation WHERE poiId=:poiId";
+			$stmt = $pdo->prepare($sql);
+			$stmt->bindValue(":poiId", $poiID);
+		} else {
+			$sql = "DELETE FROM Animation WHERE poiId IS NULL";
+			$stmt = $pdo->prepare($sql);
+		}
+		$stmt->execute();
+
+		// insert new animations
+		foreach ($animations as $event => $subAnimations) {
+			foreach ($subAnimations as $animation) {
+				$sql = "INSERT INTO Animation (poiID,event,type,length,delay,interpolation,interpolationParam,persist,`repeat`,`from`,`to`,axis) VALUES (:poiID,:event,:type,:length,:delay,:interpolation,:interpolationParam,:persist,:repeat,:from,:to,:axis)";
+				$stmt = $pdo->prepare($sql);
+				$stmt->bindValue(":event", $event);
+				$stmt->bindValue(":type", $animation->type);
+				$stmt->bindValue(":length", $animation->length);
+				$stmt->bindValue(":delay", $animation->delay);
+				$stmt->bindValue(":interpolation", $animation->interpolation);
+				$stmt->bindValue(":interpolationParam", $animation->interpolationParam);
+				$stmt->bindValue(":persist", $animation->persist);
+				$stmt->bindValue(":repeat", $animation->repeat);
+				$stmt->bindValue(":from", $animation->from);
+				$stmt->bindValue(":to", $animation->to);
+				$stmt->bindValue(":axis", $animation->axisString());
+		
+				$stmt->bindValue(":poiID", $poiID);
+				$stmt->execute();
+			}
 		}
 	}
 

@@ -72,6 +72,16 @@ class LayarPOIServer {
 		"showActivity" => TRUE,
 		"activityMessage" => NULL
 	);
+	protected $optionalAnimationFieldsDefaults = array(
+		"delay" => NULL,
+		"interpolation" => NULL,
+		"interpolationParam" => NULL,
+		"persist" => FALSE,
+		"repeat" => FALSE,
+		"from" => NULL,
+		"to" => NULL,
+		"axis" => array("x" => NULL, "y" => NULL, "z" => NULL)
+	);
 
 
 	/**
@@ -177,6 +187,15 @@ class LayarPOIServer {
 							}
 						}
 					}
+					foreach ($aPoi["animations"] as $event => &$animations) {
+						foreach ($animations as &$animation) {
+							foreach ($this->optionalAnimationFieldsDefaults as $field => $defaultValue) {
+								if (@$animation[$field] == $defaultValue) {
+									unset($animation[$field]);
+								}
+							}
+						}
+					}
 					// upscale coordinate values and truncate to int because of inconsistencies in Layar API
 					// (requests use floats, responses use integers?)
 					$aPoi["lat"] = (int)($aPoi["lat"] * 1000000);
@@ -195,6 +214,22 @@ class LayarPOIServer {
 		}
 
 		// strip out optional global parameters
+		foreach ($aResponse["actions"] as &$action) {
+			foreach ($this->optionalActionFieldsDefaults as $field => $defaultValue) {
+				if (@$action->field == $defaultValue) {
+					unset($action->field);
+				}
+			}
+		}
+		foreach ($aResponse["animations"] as $event => &$animations) {
+			foreach ($animations as &$animation) {
+				foreach ($this->optionalAnimationFieldsDefaults as $field => $defaultValue) {
+					if (@$animation->$field == $defaultValue) {
+						unset($animation->$field);
+					}
+				}
+			}
+		}
 		foreach ($this->optionalResponseFieldsDefaults as $field => $defaultValue) {
 			if (@$aResponse[$field] == $defaultValue) {
 				unset($aResponse[$field]);

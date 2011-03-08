@@ -185,14 +185,14 @@ class XMLPOIConnector extends POIConnector {
 				} else if ($nodeName == "transform") {
 					$poi->transform = new POITransform($child);
 				} else if ($nodeName == "animation") {
-					if (in_array((string)$childNode, array("drop", "spin", "grow"))) {
-						$result->animations = (string)$child;
+					if (in_array((string)$child, array("drop", "spin", "grow"))) {
+						$poi->animations = (string)$child;
 					} else {
 						$events = (string)$child["events"];
 						if (!empty($events)) {
 							foreach (array("onCreate", "onUpdate", "onDelete", "onFocus", "onClick") as $event) {
-								if (in_array($event, $events)) {
-									$result->animations[$event][] = new Animation($child);
+								if (strpos($events, $event) !== FALSE) {
+									$poi->animations[$event][] = new Animation($child);
 								}
 							}
 						}
@@ -428,10 +428,7 @@ class XMLPOIConnector extends POIConnector {
 				$animationElement["events"] = $event;
 				foreach ($animation as $animationName => $animationValue) {
 					if ($animationName == "axis") {
-						$animationValue = sprintf("%s,%s,%s", $animationValue["x"], $animationValue["y"], $animationValue["z"]);
-						if ($animationValue{0} == "," || $animationValue{strlen($animationValue) - 1} == "," || strpos($animationValue, ",,") !== FALSE) {
-							$animationValue = "";
-						}
+						$animationValue = $animation->axisString();
 					}
 					$animationElement->addChild($animationName, str_replace("&", "&amp;", $animationValue));
 				}
@@ -509,7 +506,7 @@ class XMLPOIConnector extends POIConnector {
 						$animationElement["events"] = $event;
 						foreach ($animation as $animationName => $animationValue) {
 							if ($animationName == "axis") {
-								$animationValue = implode(",", $animationValue);
+								$animationValue = $animation->axisString();
 							}
 							$animationElement->addChild($animationName, str_replace("&", "&amp;", $animationValue));
 						}

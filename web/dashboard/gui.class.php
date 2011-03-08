@@ -404,7 +404,7 @@ HTML;
 		$result .= sprintf("<tr><td>Repeat</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("animations[%s][repeat]", $index), $animation->repeat));
 		$result .= sprintf("<tr><td>From</td><td><input type=\"text\" name=\"animations[%s][from]\" value=\"%s\"></td></tr>\n", $index, $animation->from);
 		$result .= sprintf("<tr><td>To</td><td><input type=\"text\" name=\"animations[%s][to]\" value=\"%s\"></td></tr>\n", $index, $animation->to);
-		$result .= sprintf("<tr><td>Axis (x,y,z)</td><td><input type=\"text\" name=\"animations[%s][axis]\" value=\"%s\"></td></tr>\n", $index, implode("", $animation->axis) ? implode(",", $animation->axis) : "");
+		$result .= sprintf("<tr><td>Axis (x,y,z)</td><td><input type=\"text\" name=\"animations[%s][axis]\" value=\"%s\"></td></tr>\n", $index, $animation->axisString());
 		$result .= "</table>\n";
 
 		return $result;
@@ -598,7 +598,7 @@ HTML;
 			case "animations":
 				foreach ($value as $animation) {
 					$animationObj = new Animation($animation);
-					$result->animations[$animation["event"]] = $animationObj;
+					$result->animations[$animation["event"]][] = $animationObj;
 				}
 				break;
 			default:
