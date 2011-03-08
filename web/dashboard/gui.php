@@ -48,6 +48,16 @@ case "newAction":
   }
 	printf("%s", GUI::createActionSubtable($index, new POIAction(), $layerAction));
 	exit();
+case "newAnimation":
+	if (empty($_REQUEST["index"])) {
+		badRequest();
+	}
+	$index = $_REQUEST["index"];
+	if (!is_numeric($index)) {
+		badRequest();
+	}
+	printf("%s", GUI::createAnimationSubtable($index, "", new Animation()));
+	exit();
 default:
 	badRequest();
 }

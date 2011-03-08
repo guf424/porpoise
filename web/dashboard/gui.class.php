@@ -231,6 +231,15 @@ HTML;
 			$result .= sprintf("<tr><td>Action<br><button type=\"button\" onclick=\"GUI.removeLayerAction(%s)\">Remove</button></td><td>%s</td></tr>\n", $key, self::createActionSubtable($key, $action, TRUE));
 		}
 		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addLayerAction(this)\">New action</button></td></tr>\n");
+		
+		$index = 0;
+		foreach ($layerProperties->animations as $event => $animations) {
+			foreach ($animations as $animation) {
+				$result .= sprintf("<tr><td>Animation<br><button type=\"button\" onclick=\"GUI.removeLayerAnimation(%s)\">Remove</button></td><td>%s</td></tr>\n", $index, self::createAnimationSubtable($index, $event, $animation));
+				$index++;
+			}
+		}
+		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addLayerAnimation(this)\">New animation</button></td></tr>\n");
 		$result .= sprintf("<caption><button type=\"submit\">Save</button></caption>\n");
 		$result .= sprintf("</table>\n");
 		$result .= sprintf("</form>\n");
@@ -311,6 +320,12 @@ HTML;
 			$result .= sprintf("<tr><td>Action<br><button type=\"button\" onclick=\"GUI.removePOIAction(%s)\">Remove</button></td><td>%s</td></tr>\n", $key, self::createActionSubtable($key, $action));
 		}
 		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addPOIAction(this)\">New action</button></td></tr>\n");
+		foreach ($poi->animations as $event => $animations) {
+			foreach ($animations as $index => $animation) {
+				$result .= sprintf("<tr><td>Animation<br><button type=\"button\" onclick=\"GUI.removePOIAnimation(%s)\">Remove</button></td><td>%s</td></tr>\n", $index, self::createAnimationSubtable($index, $event, $animation));
+			}
+		}
+		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addPOIAnimation(this)\">New animation</button></td></tr>\n");
 
 		$result .= "<caption><button type=\"submit\">Save</button></caption>\n";
 		$result .= "</table>\n";
@@ -322,7 +337,7 @@ HTML;
 	 * Create a subtable for an action for inside a form
 	 *
 	 * @param string $index Index of the action in the actions[] array
-	 * @param POIAction $action The action
+	 * @param Action $action The action
 	 * @param bool $layerAction Create a layer action form instead of a POI action form
 	 *
 	 * @return string
@@ -346,6 +361,50 @@ HTML;
 		$result .= sprintf("<tr><td>Show activity indication</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("actions[%s][showActivity]", $index), $action->showActivity));
 		$result .= sprintf("<tr><td>Activity message</td><td><input type=\"text\" name=\"actions[%s][activityMessage]\" value=\"%s\"></td></tr>\n", $index, $action->activityMessage);
 
+		$result .= "</table>\n";
+
+		return $result;
+	}
+
+	/**
+	 * Create a dropdown for selecting animation events
+	 *
+	 * @param string $name
+	 *
+	 * @return string
+	 */
+	protected static function createEventSelector($name, $selected = NULL) {
+		$result = sprintf("<select name=\"%s\">", $name);
+		foreach (array("onCreate", "onUpdate", "onDelete", "onFocus", "onClick") as $event) {
+			$result .= sprintf("<option value=\"%s\"%s>%s</option>", $event, ($selected == $event ? " selected" : ""), $event);
+		}
+		$result .= "</select>";
+		return $result;
+	}
+
+	/**
+	 * Create a subtable for an animation for inside a form
+	 *
+	 * @param string $index Index of the action in the actions[] array
+	 * @param string $event Event for which the animation is
+	 * @param Animation $animation The animation
+	 *
+	 * @return string
+	 */
+	public static function createAnimationSubtable($index, $event, Animation $animation) {
+		$result = "";
+		$result .= "<table class=\"animation\">\n";
+		$result .= sprintf("<tr><td>Event</td><td>%s</td></tr>\n", self::createEventSelector(sprintf("animations[%s][event]", $index), $event));
+		$result .= sprintf("<tr><td>Type</td><td><input type=\"text\" name=\"animations[%s][type]\" value=\"%s\"></td></tr>\n", $index, $animation->type);
+		$result .= sprintf("<tr><td>Length</td><td><input type=\"text\" name=\"animations[%s][length]\" value=\"%s\"></td></tr>\n", $index, $animation->length);
+		$result .= sprintf("<tr><td>Delay</td><td><input type=\"text\" name=\"animations[%s][delay]\" value=\"%s\"></td></tr>\n", $index, $animation->delay);
+		$result .= sprintf("<tr><td>Interpolation</td><td><input type=\"text\" name=\"animations[%s][interpolation]\" value=\"%s\"></td></tr>\n", $index, $animation->interpolation);
+		$result .= sprintf("<tr><td>Interpolation parameter</td><td><input type=\"text\" name=\"animations[%s][interpolationParam]\" value=\"%s\"></td></tr>\n", $index, $animation->interpolationParam);
+		$result .= sprintf("<tr><td>Persist</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("animations[%s][persist]", $index), $animation->persist));
+		$result .= sprintf("<tr><td>Repeat</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("animations[%s][repeat]", $index), $animation->repeat));
+		$result .= sprintf("<tr><td>From</td><td><input type=\"text\" name=\"animations[%s][from]\" value=\"%s\"></td></tr>\n", $index, $animation->from);
+		$result .= sprintf("<tr><td>To</td><td><input type=\"text\" name=\"animations[%s][to]\" value=\"%s\"></td></tr>\n", $index, $animation->to);
+		$result .= sprintf("<tr><td>Axis (x,y,z)</td><td><input type=\"text\" name=\"animations[%s][axis]\" value=\"%s\"></td></tr>\n", $index, implode("", $animation->axis) ? implode(",", $animation->axis) : "");
 		$result .= "</table>\n";
 
 		return $result;
@@ -536,6 +595,12 @@ HTML;
 					$result->actions[] = new POIAction($action);
 				}
 				break;
+			case "animations":
+				foreach ($value as $animation) {
+					$animationObj = new Animation($animation);
+					$result->animations[$animation["event"]] = $animationObj;
+				}
+				break;
 			default:
 				$result->$key = (string)$request[$key];
 				break;
@@ -569,6 +634,12 @@ HTML;
 			case "actions":
 				foreach ($value as $action) {
 					$result->actions[] = new Action($action);
+				}
+				break;
+			case "animations":
+				foreach ($value as $animation) {
+					$animationObj = new Animation($animation);
+					$result->animations[$animation["event"]][] = $animationObj;
 				}
 				break;
 			}

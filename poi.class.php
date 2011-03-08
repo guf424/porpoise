@@ -311,6 +311,88 @@ class POIObject extends Arrayable {
 }
 
 /**
+ * Class for storing an animation definition
+ *
+ * @package PorPOISe
+ */
+class Animation extends Arrayable {
+	/** @var string type of animation */
+	public $type;
+	/** @var int length of the animation in milliseconds */
+	public $length;
+	/** @var int delay in milliseconds before the animation starts */
+	public $delay = NULL;
+	/** @var string interpolation to apply */
+	public $interpolation = NULL;
+	/** @var float interpolation parameter */
+	public $interpolationParam = NULL;
+	/** @var bool persist post-state when animation completes */
+	public $persist = FALSE;
+	/** @var bool repeat the animation */
+	public $repeat = FALSE;
+	/** @var float modifier for start state */
+	public $from = NULL;
+	/** @var float to modifier for end state */
+	public $to = NULL;
+	/** @var vector (x,y,z assoicative array) axis for the animation */
+	public $axis = array("x" => NULL, "y" => NULL, "z" => NULL);
+
+	public function set($key, $value) {
+		switch($key) {
+		case "axis":
+			if (is_array($value)) {
+				$this->axis = $value;
+			} else {
+				$axisValues = explode(",", (string)$value);
+				foreach ($axisValues as $k => $v) {
+					$axisValues[$k] = (float)$v;
+				}
+				if (count($axisValues) != 3) {
+					$axisValues = array(NULL, NULL, NULL);
+				}
+				$this->axis = array_combine(array("x","y","z"), $axisValues);
+			}
+			break;
+		case "type":
+		case "interpolation":
+			$this->$key = (string)$value;
+			break;
+		case "length":
+		case "delay":
+			$this->$key = (int)$value;
+			break;
+		case "interpolationParam":
+		case "from":
+		case "to":
+			$this->$key = (float)$value;
+			break;
+		case "persist":
+		case "repeat":
+			$this->$key = (bool)(string)$value;
+			break;
+		}
+	}
+	
+	public function __construct($source = NULL) {
+		if (empty($source)) {
+			return;
+		}
+
+		if (is_array($source)) {
+			foreach ($this as $key => $value) {
+				// $value is not relevant here
+				$this->set($key, $source[$key]);
+			}
+		} else {
+			foreach ($this as $key => $value) {
+				// $value is not relevant here
+				$this->set($key, $source->$key);
+			}
+		}
+	}
+}
+
+/**
  * Class for storing POI information
  *
  * Subclasses should define a "dimension" property or they will
@@ -321,6 +403,8 @@ class POIObject extends Arrayable {
 abstract class POI extends Arrayable {
 	/** @var POIAction[] Possible actions for this POI */
 	public $actions = array();
+	/** @var Animation[] Animations for this POI */
+	public $animations = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
 	/** @var string attribution text */
 	public $attribution = NULL;
 	/** @var int Distance in meters between the user and this POI */

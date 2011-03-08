@@ -6,80 +6,141 @@
  */
 
 var GUI = {
-addAction: function (source, actionTables, layerAction) {
-		   var maxIndex = 0;
+	getMaxInputIndexInTables: function (tables) {
+		var maxIndex = 0;
 
-		   for (var i = 0; i < actionTables.length; i++) {
-			   var inputs = actionTables[i].select("input");
-			   if (inputs.length == 0) {
-				   /* weird, page must be corrupt */
-				   return;
-			   }
-			   var inputName = inputs[0].name;
-			   var indexWithBrackets = inputName.match(/\[.+\]/);
-			   if (indexWithBrackets.length == 0) {
-				   /* again, invalid */
-				   return;
-			   }
-			   var index = parseInt(indexWithBrackets[0].substr(1, indexWithBrackets[0].length - 2));
-			   if (index > maxIndex) {
-				   maxIndex = index;
-			   }
-		   }
+		for (var i = 0; i < tables.length; i++) {
+			var inputs = tables[i].select("input");
+			if (inputs.length == 0) {
+				/* weird, page must be corrupt */
+				return -1;
+			}
+			var inputName = inputs[0].name;
+			var indexWithBrackets = inputName.match(/\[.+\]/);
+			if (indexWithBrackets.length == 0) {
+				/* again, invalid */
+				return;
+			}
+			var index = parseInt(indexWithBrackets[0].substr(1, indexWithBrackets[0].length - 2));
+			if (index > maxIndex) {
+				maxIndex = index;
+			}
+		}
+		return maxIndex;
+	}
 
-		   var newIndex = maxIndex + 1;
+	, addAction: function (source, actionTables, layerAction) {
+		var maxIndex = this.getMaxInputIndexInTables(actionTables);
+		if (maxIndex < 0) {
+			return;
+		}
 
-		   var newRow = document.createElement("tr");
-		   var td = document.createElement("td");
-		   td.insert("Action<br><button type=\"button\" onclick=\"GUI.remove" + (layerAction ? "Layer" : "POI") + "Action(" + newIndex + ")\">Remove</button>");
-		   newRow.appendChild(td);
-		   td = document.createElement("td");
-		   newRow.appendChild(td);
-		   new Ajax.Updater ({ success: td }, "gui.php", { parameters: { action: "newAction", index: newIndex, layerAction: layerAction }, insertion: "bottom" } );
-		   var sourceRow = source.up("tr");
-		   sourceRow.insert({ before: newRow });
-	   }
+		var newIndex = maxIndex + 1;
 
-	   , addPOIAction: function(source) {
-		   var poiActionTables = document.body.select("table.poi table.action");
-		   this.addAction(source, poiActionTables, false);
-	   }	
+		var newRow = document.createElement("tr");
+		var td = document.createElement("td");
+		td.insert("Action<br><button type=\"button\" onclick=\"GUI.remove" + (layerAction ? "Layer" : "POI") + "Action(" + newIndex + ")\">Remove</button>");
+		newRow.appendChild(td);
+		td = document.createElement("td");
+		newRow.appendChild(td);
+		new Ajax.Updater ({ success: td }, "gui.php", { parameters: { action: "newAction", index: newIndex, layerAction: layerAction }, insertion: "bottom" } );
+		var sourceRow = source.up("tr");
+		sourceRow.insert({ before: newRow });
+	}
 
-	   , addLayerAction: function(source) {
-		   var layerActionTables = document.body.select("table.layer table.action");
-		   this.addAction(source, layerActionTables, true);
-	   }	
+	, addPOIAction: function(source) {
+		var poiActionTables = document.body.select("table.poi table.action");
+		this.addAction(source, poiActionTables, false);
+	}	
 
-	   , removePOIAction: function(indexToRemove) {
-		   var poiActionTables = document.body.select("table.poi table.action");
-		   this.removeAction(indexToRemove, poiActionTables);
-	   }
+	, addLayerAction: function(source) {
+		var layerActionTables = document.body.select("table.layer table.action");
+		this.addAction(source, layerActionTables, true);
+	}	
 
-	   , removeLayerAction: function(indexToRemove) {
-		   var layerActionTables = document.body.select("table.layer table.action");
-		   this.removeAction(indexToRemove, layerActionTables);
-	   }
+	, removePOIAction: function(indexToRemove) {
+		var poiActionTables = document.body.select("table.poi table.action");
+		this.removeAction(indexToRemove, poiActionTables);
+	}
 
-	   , removeAction: function(indexToRemove, actionTables) {
-		   for (var i = 0; i < actionTables.length; i++) {
-			   var inputs = actionTables[i].select("input");
-			   if (inputs.length == 0) {
-				   /* weird, page must be corrupt */
-				   return;
-			   }
-			   var inputName = inputs[0].name;
-			   var indexWithBrackets = inputName.match(/\[.+\]/);
-			   if (indexWithBrackets.length == 0) {
-				   /* again, invalid */
-				   return;
-			   }
-			   var index = parseInt(indexWithBrackets[0].substr(1, indexWithBrackets[0].length - 2));
-			   if (index == indexToRemove) {
-				   actionTables[i].up("tr").remove();
-				   return;
-			   }
-		   }
-	   }		
+	, removeLayerAction: function(indexToRemove) {
+		var layerActionTables = document.body.select("table.layer table.action");
+		this.removeAction(indexToRemove, layerActionTables);
+	}
+
+	, removeAction: function(indexToRemove, actionTables) {
+		toRemove = this.findInputInTables(indexToRemove, actionTables);
+		if (toRemove) {
+			toRemove.up("tr").remove();
+		}
+	}
+
+	, findInputInTables: function (indexToFind, tables) {
+		for (var i = 0; i < tables.length; i++) {
+			var inputs = tables[i].select("input");
+			if (inputs.length == 0) {
+				/* weird, page must be corrupt */
+				return;
+			}
+			var inputName = inputs[0].name;
+			var indexWithBrackets = inputName.match(/\[.+\]/);
+			if (indexWithBrackets.length == 0) {
+				/* again, invalid */
+				return;
+			}
+			var index = parseInt(indexWithBrackets[0].substr(1, indexWithBrackets[0].length - 2));
+			if (index == indexToFind) {
+				return tables[i];
+			}
+		}
+	}
+
+	, addAnimation: function (source, animationTables, layerAnimation) {
+		var maxIndex = this.getMaxInputIndexInTables(animationTables);
+		if (maxIndex < 0) {
+			return;
+		}
+
+		var newIndex = maxIndex + 1;
+
+		var newRow = document.createElement("tr");
+		var td = document.createElement("td");
+		td.insert("Animation<br><button type=\"button\" onclick=\"GUI.remove" + (layerAnimation ? "Layer" : "POI") + "Animation(" + newIndex + ")\">Remove</button>");
+		newRow.appendChild(td);
+		td = document.createElement("td");
+		newRow.appendChild(td);
+		new Ajax.Updater ({ success: td }, "gui.php", { parameters: { action: "newAnimation", index: newIndex }, insertion: "bottom" } );
+		var sourceRow = source.up("tr");
+		sourceRow.insert({ before: newRow });
+	}
+
+	, addPOIAnimation: function(source) {
+		var poiAnimationTables = document.body.select("table.poi table.animation");
+		this.addAnimation(source, poiAnimationTables, false);
+	}	
+
+	, addLayerAnimation: function(source) {
+		var layerAnimationTables = document.body.select("table.layer table.animation");
+		this.addAnimation(source, layerAnimationTables, true);
+	}	
+
+	, removePOIAnimation: function(indexToRemove) {
+		var poiAnimationTables = document.body.select("table.poi table.animation");
+		this.removeAnimation(indexToRemove, poiAnimationTables);
+	}
+
+	, removeLayerAnimation: function(indexToRemove) {
+		var layerAnimationTables = document.body.select("table.layer table.animation");
+		this.removeAnimation(indexToRemove, layerAnimationTables);
+	}
+
+	, removeAnimation: function(indexToRemove, animationTables) {
+		toRemove = this.findInputInTables(indexToRemove, animationTables);
+		if (toRemove) {
+			toRemove.up("tr").remove();
+		}
+	}
+
 }
 
 

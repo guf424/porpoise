@@ -37,6 +37,8 @@ class LayarResponse {
 	public $showMessage = NULL;
 	/** @var Action[] */
 	public $actions = array();
+	/** @var Animation[] */
+	public $animations = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
 	/** @var bool */
 	public $morePages = FALSE;
 	/** @var string */
