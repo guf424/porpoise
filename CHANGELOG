@@ -1,3 +1,12 @@
+= Release 1.1 =
+- Layar 5.0 support (animations)
+- proper UTF-8 handling (hopefully finally fixed). UTF-8 is now properly
+  enforced by the dashboard and the default database. If you manually edit XML,
+  make sure your editor saves it as UTF-8.
+
+= Release 1.0a =
+- small bugfixes
+
 = Release 1.0 =
 - whatever you do, (re-)read INSTALL and/or UPGRADING. Some things have changed
 - general summary of upgrade: Layar 4.0 support, better organization of files

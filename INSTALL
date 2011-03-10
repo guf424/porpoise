@@ -15,7 +15,11 @@ After unzipping/uploading/copying the release files, take the config/ directory
 and move it someplace where it is not reachable through the web. Remember where
 you put it and open the file config.php. Change the constant
 PORPOISE_CONFIG_PATH to where you put the config directory and you should be
-good to go. From here on we shall refer to this path as "yourconfig".
+good to go. From here on we shall refer to this path as "yourconfig". For
+experimentation, you can leave the config location alone. However, if you
+store database credentials in the config file, please make sure that the config
+file is not accessible through the web or you will expose your database
+password.
 
 Open "http://yourhost/yourdirectory/porpoise.php" and check that you get
 JSON output telling you that the parameter "userId" is missing. If you see
@@ -42,4 +46,4 @@ Create and configure your layer on dev.layar.com (if you didn't already),
 use the web location of porpoise.php as your POI URL and see what it looks
 like!
 
-The dashboard is accessible as http://yourhost/yourdirectory/dashboard.
+The dashboard is accessible as http://yourhost/yourdirectory/dashboard/

@@ -86,6 +86,7 @@ class GUI {
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 <title>PorPOISe POI Management Interface</title>
 <link rel="stylesheet" type="text/css" href="styles.css">
 <script type="text/javascript" src="prototype.js"></script>
@@ -219,7 +220,7 @@ HTML;
 			$result .= "none\n";
 		}
 		$result .= "</p>\n";
-		$result .= sprintf("<form action=\"?action=layer&layerName=%s\" method=\"POST\">\n", $layerName);
+		$result .= sprintf("<form accept-charset=\"utf-8\" action=\"?action=layer&layerName=%s\" method=\"POST\">\n", $layerName);
 
 		$layerProperties = DML::getLayerProperties($layerName);
 		$result .= sprintf("<table class=\"layer\">\n");
@@ -268,7 +269,7 @@ HTML;
 			$result .= "<tr>\n";
 			$result .= sprintf("<td><a href=\"?action=poi&layerName=%s&poiID=%s\">%s</a></td>\n", urlencode($layerName), urlencode($poi->id), ($poi->title ? $poi->title : "&lt;no title&gt;"));
 			$result .= sprintf("<td>%s,%s</td>\n", $poi->lat, $poi->lon);
-			$result .= sprintf("<td><form action=\"?action=deletePOI\" method=\"POST\"><input type=\"hidden\" name=\"layerName\" value=\"%s\"><input type=\"hidden\" name=\"poiID\" value=\"%s\"><button type=\"submit\">Delete</button></form></td>\n", urlencode($layerName), urlencode($poi->id));
+			$result .= sprintf("<td><form accept-charset=\"utf-8\" action=\"?action=deletePOI\" method=\"POST\"><input type=\"hidden\" name=\"layerName\" value=\"%s\"><input type=\"hidden\" name=\"poiID\" value=\"%s\"><button type=\"submit\">Delete</button></form></td>\n", urlencode($layerName), urlencode($poi->id));
 			$result .= "</tr>\n";
 		}
 		$result .= "</table>\n";
@@ -289,7 +290,7 @@ HTML;
 		}
 		$result = "";
 		$result .= sprintf("<p><a href=\"?action=layer&layerName=%s\">Back to %s</a></p>\n", urlencode($layerName), $layerName);
-		$result .= sprintf("<form action=\"?layerName=%s&action=poi&poiID=%s\" method=\"POST\">\n", urlencode($layerName), urlencode($poi->id));
+		$result .= sprintf("<form accept-charset=\"utf-8\" action=\"?layerName=%s&action=poi&poiID=%s\" method=\"POST\">\n", urlencode($layerName), urlencode($poi->id));
 		$result .= "<table class=\"poi\">\n";
 		$result .= sprintf("<tr><td>ID</td><td><input type=\"hidden\" name=\"id\" value=\"%s\">%s</td></tr>\n", $poi->id, $poi->id);
 		$result .= sprintf("<tr><td>Title</td><td><input type=\"text\" name=\"title\" value=\"%s\"></td></tr>\n", $poi->title);
@@ -420,7 +421,7 @@ HTML;
 	 */
 	public function createNewPOIScreen($layerName) {
 		$result = "";
-		$result .= sprintf("<form action=\"?action=newPOI&layerName=%s\" method=\"POST\">\n", urlencode($layerName));
+		$result .= sprintf("<form accept-charset=\"utf-8\" action=\"?action=newPOI&layerName=%s\" method=\"POST\">\n", urlencode($layerName));
 		$result .= sprintf("<table class=\"newPOI\">\n");
 		$result .= sprintf("<tr><td>Dimension</td><td><input type=\"text\" name=\"dimension\" size=\"1\"></td></tr>\n");
 		$result .= sprintf("<caption><button type=\"submit\">Create</button></caption>");
@@ -452,7 +453,7 @@ HTML;
 			}
 			$getString .= urlencode($key) . "=" . urlencode($value);
 		}
-		$result .= sprintf("<form method=\"POST\" action=\"%s%s\">\n", $_SERVER["PHP_SELF"], $getString);
+		$result .= sprintf("<form accept-charset=\"utf-8\" method=\"POST\" action=\"%s%s\">\n", $_SERVER["PHP_SELF"], $getString);
 		$result .= "<table class=\"login\">\n";
 		$result .= "<tr><td>Username</td><td><input type=\"text\" name=\"username\" size=\"15\"></td></tr>\n";
 		$result .= "<tr><td>Password</td><td><input type=\"password\" name=\"password\" size=\"15\"></td></tr>\n";
@@ -485,7 +486,7 @@ HTML;
 		$result = "";
 		$layers = DML::getLayers();
 		$layers = array_combine($layers, $layers);
-		$result .= sprintf("<form method=\"POST\" action=\"%s?action=migrate\">\n", $_SERVER["PHP_SELF"]);
+		$result .= sprintf("<form accept-charset=\"utf-8\" method=\"POST\" action=\"%s?action=migrate\">\n", $_SERVER["PHP_SELF"]);
 		$result .= sprintf("<p>Copy from %s to %s <button type=\"submit\">Copy</button></p>\n", GUI::createSelect("from", $layers), GUI::createSelect("to", $layers));
 		$result .= sprintf("<p>Warning: copying contents will overwrite any old data in the destination layer</p>\n");
 		$result .= "</form>\n";

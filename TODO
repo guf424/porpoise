@@ -1,11 +1,14 @@
 scratch sheet for ToDo's
 
-1.1
+x.y (a.k.a. The Backlog)
 / implement bounding boxing and test performance (and function)
  \-> don't forget wraparound at (-)180 degrees
 - multiple layers in one database
   - POIConnector::getLayerProperties() method
-- centralize forced casting logic
-  - allow NULL values for (certain?) integers
-- centralize/refactor default values
-- properly convert layer level actions to arrays and do parameter filtering on them
+- adopt schema language for loading and default administration
+  - do not store NULL values in XML
+  - type safe checking of defaults
+  - generalize default filtering
+- pick a database migration tool
+- administration of config through dashboard
+- publishing API support

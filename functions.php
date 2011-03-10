@@ -124,3 +124,28 @@ function utf8_encode_recursive($ar) {
 	}
 	return $result;
 }
+
+/**
+ * Cast a variable to a certain type, but with special rules
+ *
+ * Accepts the same type values as settype(). Special casting behavior is as follows:
+ * * NULL stays NULL
+ * * empty string to int or float becomes NULL
+ *
+ * @param mixed $v
+ * @param string $type
+ * @return mixed $v NULL if $v === NULL, the cast value of $v
+ */
+function special_cast($v, $type) {
+	if ($v === NULL) {
+		return NULL;
+	}
+	if (in_array($type, array("int", "integer", "float", "double"))) {
+		if ((string)$v === "") {
+			return NULL;
+		}
+	}
+	settype($v, $type);
+	return $v;
+}
+

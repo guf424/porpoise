@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 
 <porpoise-configuration>
- <developer-id>12345</developer-id>
- <developer-key>your key here</developer-key>
  <connectors>
   <!--<connector><name></name><file></file></connector>-->
  </connectors>
@@ -27,7 +25,7 @@ Sample XML+XSL layer configuration
    <name>example</name>
    <connector>XMLPOIConnector
     <options><stylesheet>xsl/yoursheet.xsl</stylesheet></options>
-	 </connector>
+   </connector>
    <source>example.xml</source>
   </layer>
 -->

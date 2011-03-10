@@ -1,24 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layer>
-
-<pois>
-
-<poi>
-<dimension>1</dimension>
-<action><uri>http://www.nowhere.com</uri><label>example action</label></action>
-<attribution/>
-<distance/>
-<id>1</id>
-<imageURL/>
-<lat>52.377544</lat>
-<lon>4.887339</lon>
-<line2/>
-<line3/>
-<line4/>
-<title>example POI</title>
-<type>1</type>
-<showSmallBiw>0</showSmallBiw>
-</poi>
-</pois>
-
+      <pois>
+            <poi>
+                  <dimension>1</dimension>
+                  <action>
+                        <uri>http://www.nowhere.com</uri>
+                        <label>example action</label>
+                  </action>
+                  <attribution/>
+                  <distance/>
+                  <id>1</id>
+                  <imageURL/>
+                  <lat>52.377544</lat>
+                  <lon>4.887339</lon>
+                  <line2/>
+                  <line3/>
+                  <line4/>
+                  <title>example POI</title>
+                  <type>1</type>
+                  <showSmallBiw>0</showSmallBiw>
+            </poi>
+      </pois>
+      <refreshInterval>300</refreshInterval>
+      <refreshDistance>100</refreshDistance>
+      <fullRefresh>1</fullRefresh>
+      <showMessage></showMessage>
+      <animation events="onCreate">
+            <type>rotate</type>
+            <length>300</length>
+            <delay>0</delay>
+            <interpolation></interpolation>
+            <interpolationParam>0</interpolationParam>
+            <persist></persist>
+            <repeat></repeat>
+            <from>-0.5</from>
+            <to>0</to>
+            <axis>0,0,1</axis>
+      </animation>
 </layer>

@@ -1,5 +1,13 @@
 ===PorPOISe upgrading instructions===
 
+= Upgrading from 1.0 to 1.1 =
+- back up your config/ directory
+- unzip the new distribution
+- move your old config directory back in place
+- if you use a database, either create a new database from database.sql and
+  copy the old database over it or take the definition for the Animation table
+  from database.sql and run that against your database
+
 = Upgrading from 0.7x to 1.0 =
 
 - backup all your customized files: config.xml, .tab/.xml data files, custom
