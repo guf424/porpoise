@@ -188,13 +188,22 @@ class LayarPOIServer {
 						}
 					}
 					foreach ($aPoi["animations"] as $event => &$animations) {
-						foreach ($animations as &$animation) {
+						foreach ($animations as $k => &$animation) {
 							foreach ($this->optionalAnimationFieldsDefaults as $field => $defaultValue) {
 								if (@$animation[$field] == $defaultValue) {
 									unset($animation[$field]);
 								}
 							}
+							if (!count($animations[$k])) {
+								unset($animations[$k]);
+							}							
 						}
+						if (!count($aPoi["animations"][$event])) {
+							unset($aPoi["animations"][$event]);
+						}
+					}
+					if (!count($aPoi["animations"])) {
+						unset($aPoi["animations"]);
 					}
 					// upscale coordinate values and truncate to int because of inconsistencies in Layar API
 					// (requests use floats, responses use integers?)
@@ -222,13 +231,22 @@ class LayarPOIServer {
 			}
 		}
 		foreach ($aResponse["animations"] as $event => &$animations) {
-			foreach ($animations as &$animation) {
+			foreach ($animations as $k => &$animation) {
 				foreach ($this->optionalAnimationFieldsDefaults as $field => $defaultValue) {
-					if (@$animation->$field == $defaultValue) {
-						unset($animation->$field);
+					if (@$animation[$field] == $defaultValue) {
+						unset($animation[$field]);
 					}
 				}
+				if (!count($animations[$k])) {
+					unset($animations[$k]);
+				}							
 			}
+			if (!count($aResponse["animations"][$event])) {
+				unset($aResponse["animations"][$event]);
+			}
+		}
+		if (!count($aResponse["animations"])) {
+			unset($aResponse["animations"]);
 		}
 		foreach ($this->optionalResponseFieldsDefaults as $field => $defaultValue) {
 			if (@$aResponse[$field] == $defaultValue) {
