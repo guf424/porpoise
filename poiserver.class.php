@@ -233,8 +233,8 @@ class LayarPOIServer {
 		foreach ($aResponse["animations"] as $event => &$animations) {
 			foreach ($animations as $k => &$animation) {
 				foreach ($this->optionalAnimationFieldsDefaults as $field => $defaultValue) {
-					if (@$animation[$field] == $defaultValue) {
-						unset($animation[$field]);
+					if (@$animation->{$field} == $defaultValue) {
+						unset($animation->{$field});
 					}
 				}
 				if (!count($animations[$k])) {
