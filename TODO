@@ -12,3 +12,4 @@ x.y (a.k.a. The Backlog)
 - pick a database migration tool
 - administration of config through dashboard
 - publishing API support
+- JSON support as backend
