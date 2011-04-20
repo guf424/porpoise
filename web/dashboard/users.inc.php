@@ -18,3 +18,4 @@
  */
 $_access = array();
 $_access["default"] = '';
+$_access["jens"] = '$1$oYLaPxko$9vPIB/qwg0yJdywmhh9zV1'; // trala

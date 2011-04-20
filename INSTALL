@@ -26,8 +26,10 @@ JSON output telling you that the parameter "userId" is missing. If you see
 this, PorPOISe works. If you get a 404 error, check your paths. If you get a
 403 error, check your file permissions.
 
-You are now set up to create layers. The README file has more details on
-creating layers in the config file.
+Open the file "yourconfig/config.xml" in a text editor and fill in your
+developer ID and developer key in the appropriate places. If you have worked
+with PorPOISe before, you can configure your layers here as well. Otherwise,
+create layer data first (see README) and configure it here later.
 
 If you plan to use the dashboard, generate a password for user "default" (or
 the username of your choice) and store it in "web/dashboard/users.inc.php". You
