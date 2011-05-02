@@ -18,5 +18,4 @@
  */
 $_access = array();
 $_access["default"] = '';
-$_access["jens"] = '$1$plJdhG2e$dXuo.6QpxTFMjENjggfJk/';
 
