@@ -321,9 +321,11 @@ HTML;
 			$result .= sprintf("<tr><td>Action<br><button type=\"button\" onclick=\"GUI.removePOIAction(%s)\">Remove</button></td><td>%s</td></tr>\n", $key, self::createActionSubtable($key, $action));
 		}
 		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addPOIAction(this)\">New action</button></td></tr>\n");
+		$index = 0;
 		foreach ($poi->animations as $event => $animations) {
-			foreach ($animations as $index => $animation) {
+			foreach ($animations as $animation) {
 				$result .= sprintf("<tr><td>Animation<br><button type=\"button\" onclick=\"GUI.removePOIAnimation(%s)\">Remove</button></td><td>%s</td></tr>\n", $index, self::createAnimationSubtable($index, $event, $animation));
+				$index++;
 			}
 		}
 		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addPOIAnimation(this)\">New animation</button></td></tr>\n");
