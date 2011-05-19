@@ -85,6 +85,14 @@ class Layer {
 						if ($poi->distance > $this->response->radius) {
 							$this->response->radius = $poi->distance;
 						}
+						// fix a scaling bug in the iPhone 5.0.2
+						if (!empty($filter->userAgent) && strpos($filter->userAgent, "Layar/5.0.2 iPhoneOS") !== FALSE) {
+							if ($poi->dimension == 3) {
+								if (!empty($poi->transform->scale) && !empty($poi->object->size)) {
+									$poi->transform->scale = $poi->transform->scale / $poi->object->size;
+								}
+							}
+						}
 					}
 					$this->session_save($filter->userID);
 		}
