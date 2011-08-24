@@ -36,11 +36,17 @@ try {
 	}
 	/* handle action */
 	switch($_action) {
-            case "main":
+    case "main":
 				GUI::printMessage("%s", GUI::createMainScreen());
             break;
             case "layer":
-				GUI::printMessage("%s", GUI::createLayerScreen($_REQUEST["layerName"]));
+        $layerProperties = DML::getLayerProperties($_REQUEST["layerName"]);
+        if (empty($layerProperties->layer)) {
+          $layerProperties = new LayarResponse();
+          $layerProperties->layer = $_REQUEST["layerName"];
+          DML::saveLayerProperties($_REQUEST["layerName"], $layerProperties);
+        }
+        GUI::printMessage("%s", GUI::createLayerScreen($_REQUEST["layerName"]));
             break;
             case "poi":
 				$poi = DML::getPOI($_REQUEST["layerName"], $_REQUEST["poiID"]);
