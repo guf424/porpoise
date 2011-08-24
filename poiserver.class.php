@@ -46,12 +46,11 @@ class LayarPOIServer {
 	protected $optionalRequestFields = array("accuracy", "timestamp", "RADIOLIST", "SEARCHBOX_1", "SEARCHBOX_2", "SEARCHBOX_3", "CUSTOM_SLIDER_1", "CUSTOM_SLIDER_2", "CUSTOM_SLIDER_3", "pageKey", "oath_consumer_key", "oauth_signature_method", "oauth_timestamp", "oauth_nonce", "oauth_version", "oauth_signature", "radius", "alt");
 	protected $optionalPOIFieldsDefaults = array(
 		"inFocus" => FALSE,
-		"alt" => NULL,
-		"relativeAlt" => NULL,
 		"timestamp" => NULL,
 		"doNotIndex" => FALSE,
 		"showSmallBiw" => TRUE,
-		"showBiwOnClick" => TRUE
+		"showBiwOnClick" => TRUE,
+		"biwStyle" => NULL
 	);
 	protected $optionalResponseFieldsDefaults = array(
 		"refreshInterval" => 300,
@@ -71,6 +70,13 @@ class LayarPOIServer {
 		"closeBiw" => FALSE,
 		"showActivity" => TRUE,
 		"activityMessage" => NULL
+	);
+	protected $optionalObjectFieldsDefaults = array(
+		"reducedURL" => NULL
+	);
+	protected $optionalIconFieldsDefaults = array(
+		"url" => NULL,
+		"type" => 0
 	);
 	protected $optionalAnimationFieldsDefaults = array(
 		"delay" => NULL,
@@ -106,23 +112,24 @@ class LayarPOIServer {
 		$filter = $this->buildFilter();
 		try {
 			$this->validateRequest();
-			
+
 			$layer = $this->layers[$filter->layerName];
 			$layer->determineNearbyPOIs($filter);
-			
+
 			$response = $layer->getLayarResponse();
 			$response->layer = $filter->layerName;
+
 			$numPois = count($response->hotspots);
 			if ($loghandler) {
 				$loghandler->log($filter, array('numpois' => $numPois));
 			}
-	
+
 			$this->sendLayarResponse($response);
 		} catch (Exception $e) {
 			if ($loghandler) {
 				$loghandler->log($filter, array('errorMessage' => $e->getMessage()));
 			}
-	
+
 			$this->sendErrorResponse(self::ERROR_CODE_DEFAULT, $e->getMessage());
 		}
 	}
@@ -164,7 +171,7 @@ class LayarPOIServer {
 					if ($poi->id == @$this->filter->requestedPoiId) {
 						$poi->inFocus = true;
 					}
-					
+
 					$aPoi = $poi->toArray();
 					// strip out optional fields to cut on bandwidth
 					foreach ($this->optionalPOIFieldsDefaults as $field => $defaultValue) {
@@ -180,12 +187,43 @@ class LayarPOIServer {
 							unset($aPoi[$field]);
 						}
 					}
-					foreach($aPoi["actions"] as &$action) {
-						foreach($this->optionalActionFieldsDefaults as $field => $defaultValue) {
-							if (@$action[$field] == $defaultValue) {
-								unset($action[$field]);
+					if (count($aPoi["actions"])<1) {
+						unset($aPoi["actions"]);
+					} else {
+						foreach($aPoi["actions"] as &$action) {
+							foreach($this->optionalActionFieldsDefaults as $field => $defaultValue) {
+								if (@$action[$field] == $defaultValue) {
+									unset($action[$field]);
+								}
 							}
 						}
+					}
+					if (empty($aPoi['anchor']['referenceImage'])) {
+						unset($aPoi['anchor']['referenceImage']);
+					}
+					if (array_sum($aPoi['anchor']['geolocation'])<1) {
+						unset($aPoi['anchor']['geolocation']);
+					}
+					if (count($aPoi["object"])<1) {
+						unset($aPoi["object"]);
+					} else {
+						foreach($this->optionalObjectFieldsDefaults as $field => $defaultValue) {
+							//echo $field.' >> '.$defaultValue."\n";
+							if (@$aPoi["object"][$field] == $defaultValue) {
+								unset($aPoi["object"][$field]);
+							}
+						}
+					}
+					foreach($this->optionalIconFieldsDefaults as $field => $defaultValue) {
+						if (@$aPoi["icon"][$field] == $defaultValue) {
+							unset($aPoi["icon"][$field]);
+						}
+					}
+					if (count($aPoi['icon'])<1) {
+						unset($aPoi["icon"]);
+					}
+					if (array_sum($aPoi['transform']['rotate']['axis'])==0) {
+						unset($aPoi['transform']['rotate']);
 					}
 					foreach ($aPoi["animations"] as $event => &$animations) {
 						foreach ($animations as $k => &$animation) {
@@ -196,7 +234,7 @@ class LayarPOIServer {
 							}
 							if (!count($animations[$k])) {
 								unset($animations[$k]);
-							}							
+							}
 						}
 						if (!count($aPoi["animations"][$event])) {
 							unset($aPoi["animations"][$event]);
@@ -206,13 +244,10 @@ class LayarPOIServer {
 						unset($aPoi["animations"]);
 					}
 					// upscale coordinate values and truncate to int because of inconsistencies in Layar API
-					// (requests use floats, responses use integers?)
-					$aPoi["lat"] = (int)($aPoi["lat"] * 1000000);
-					$aPoi["lon"] = (int)($aPoi["lon"] * 1000000);
+
 					// fix some types that are not strings
-					$aPoi["type"] = (int)$aPoi["type"];
 					$aPoi["distance"] = (float)$aPoi["distance"];
-					
+
 					$aResponse["hotspots"][] = $aPoi;
 				}
 				break;
@@ -239,7 +274,7 @@ class LayarPOIServer {
 				}
 				if (!count($animations[$k])) {
 					unset($animations[$k]);
-				}							
+				}
 			}
 			if (!count($aResponse["animations"][$event])) {
 				unset($aResponse["animations"][$event]);
@@ -296,7 +331,7 @@ class LayarPOIServer {
 	 *
 	 * If this function returns (i.e. does not throw anything) the request is
 	 * valid and can be processed with no further input checking
-	 * 
+	 *
 	 * @throws Exception Throws an exception of something is wrong with the request
 	 * @return void
 	 */
@@ -342,12 +377,12 @@ class LayarPOIServer {
 			case "pageKey":
 			case "lang":
 			case "countryCode":
-			case "layerName":				
-			case "version":	
+			case "layerName":
+			case "version":
 			case "action":
 				$result->$key = $value;
 				break;
-			case "requestedPoiId":				
+			case "requestedPoiId":
 				$result->$key = ($value == 'None') ? null : $value;
 				break;
 			case "timestamp":
@@ -433,7 +468,7 @@ class LayarPOIServerFactory {
 		$this->developerId = $developerID;
 		$this->developerKey = $developerKey;
 	}
-	
+
 	/**
 	 * Create a LayarPOIServer with content from a list of files
 	 *

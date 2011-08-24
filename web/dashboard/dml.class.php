@@ -60,7 +60,9 @@ class DML {
 			return FALSE;
 		}
 		$poiConnector = self::getPOIConnectorFromDefinition($layerDefinition);
-		return $poiConnector->getPOIs();
+		$filter = new LayarFilter();
+		$filter->layerName = $layerName;
+		return $poiConnector->getPOIs($filter);
 	}
 
 	/**
@@ -72,13 +74,13 @@ class DML {
 	 */
 	protected static function getPOIConnectorFromDefinition(LayerDefinition $layerDefinition) {
 		switch($layerDefinition->getSourceType()) {
-		case LayerDefinition::DSN:
+                    case LayerDefinition::DSN:
 			$poiConnector = new $layerDefinition->connector($layerDefinition->source["dsn"], $layerDefinition->source["username"], $layerDefinition->source["password"]);
 			break;
-		case LayerDefinition::FILE:
+                    case LayerDefinition::FILE:
 			$poiConnector = new $layerDefinition->connector($layerDefinition->source);
 			break;
-		default:
+                    default:
 			throw new Exception(sprintf("Invalid source type: %d", $layerDefinition->getSourceType()));
 		}
 		foreach ($layerDefinition->connectorOptions as $optionName => $option) {
@@ -185,8 +187,10 @@ class DML {
 	 * @return LayarResponse
 	 */
 	public static function getLayerProperties($layerName) {
+		$filter = new LayarFilter();
+		$filter->layerName = $layerName;
 		$connector = self::getPOIConnector($layerName);
-		$result = $connector->getLayarResponse();
+		$result = $connector->getLayarResponse($filter);
 		$result->hotspots = array();	// this method should not be used to get hotspots. removing them here guarantees no other code relies on it
 		return $result;
 	}

@@ -41,11 +41,11 @@ case "newAction":
 	if (!is_numeric($index)) {
 		badRequest();
 	}
-  if (empty($_REQUEST["layerAction"])) {
-    $layerAction = FALSE;
-  } else {
-    $layerAction = $_REQUEST["layerAction"];
-  }
+	if (empty($_REQUEST["layerAction"]) || strtolower($_REQUEST["layerAction"])!='true') {
+		$layerAction = FALSE;
+	} else {
+		$layerAction = true;
+	}
 	printf("%s", GUI::createActionSubtable($index, new POIAction(), $layerAction));
 	exit();
 case "newAnimation":

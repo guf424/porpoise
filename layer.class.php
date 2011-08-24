@@ -27,7 +27,7 @@ class Layer {
 	public $developerKey;
 	/** @var string layer name */
 	public $layerName;
-	
+
 	/** @var POIConnector */
 	protected $poiConnector;
 
@@ -79,8 +79,9 @@ class Layer {
 				!empty($this->poiConnector)) {
 
 					$this->response = $this->poiConnector->getLayarResponse($filter);
+
 					$pois = $this->response->hotspots;
-					
+
 					foreach($pois as $poi) {
 						if ($poi->distance > $this->response->radius) {
 							$this->response->radius = $poi->distance;
@@ -98,7 +99,7 @@ class Layer {
 		}
 		// iterate over POIs and determine max distance
 		// TODO: do something sensible with this
-		// current implementation adds all POIs in the order they are
+		// Current implementation adds all POIs in the order they are
 		// retrieved, while according to the spec max 50 POIs are displayed.
 		// So limit POIs to max. 50, optionally after sorting by distance.
 		// Maybe make the sorting order a config setting
@@ -123,11 +124,11 @@ class Layer {
 		// the current page and the overall request we need to fix some more
 		// lines than just the next 10 or so
 		// --- >8 ---
-				
+
 		$this->hasMorePOIs = FALSE;
 		$this->nextPageKey = NULL;
 		$numPois = count($this->response->hotspots);
-		
+
 		if ($numPois - $offset > self::POIS_PER_PAGE) {
 			$this->response->morePages = TRUE;
 			$this->response->nextPageKey = ($offset / self::POIS_PER_PAGE) + 1;
@@ -188,7 +189,7 @@ class Layer {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Save data for an ongoing request in the session
 	 *
@@ -202,7 +203,7 @@ class Layer {
 		$_SESSION['layerName'] = $this->layerName;
 		session_commit();
 	}
-	
+
 	/**
 	 * Delete saved session data
 	 *
@@ -216,8 +217,8 @@ class Layer {
 		unset($_SESSION['layerName']);
 		session_commit();
 	}
-	
-	
+
+
 	/**
 	 * Get the nearby POIs determined after calling determineNearbyPOIs()
 	 *
@@ -236,7 +237,7 @@ class Layer {
 		return $this->response;
 	}
 
-		
+
 	/**
 	 * Get the Layer name
 	 *
@@ -245,7 +246,7 @@ class Layer {
 	public function getLayerName() {
 		return $this->layerName;
 	}
-		
+
 	/**
 	 * Get the max. radius plus some margin
 	 *
@@ -254,8 +255,8 @@ class Layer {
 	public function getRadius() {
 		return $this->response->radius;
 	}
-	
-	
+
+
 	/**
 	 * Check if there are more POIs than returned (for additional pages)
 	 *

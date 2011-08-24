@@ -88,7 +88,8 @@ class Action extends Arrayable {
 	public $showActivity = TRUE;
 	/** @var string Message to show instead of default spinner */
 	public $activityMessage = NULL;
-	
+
+
 	/**
 	 * Constructor
 	 *
@@ -119,8 +120,8 @@ class Action extends Arrayable {
 						break;
 					case "closeBiw":
 					case "showActivity":
-						$this->$field = (bool)$source[$field];
-						break;
+            $this->$field = (bool)(string)$source[$field];
+            break;
 					case "params":
 						$value = (string)$source[$field];
 						if (!empty($value)) {
@@ -144,8 +145,8 @@ class Action extends Arrayable {
 						break;
 					case "closeBiw":
 					case "showActivity":
-						$this->$field = (bool)(string)$source->$field;
-						break;
+            $this->$field = (bool)(string)$source->$field;
+            break;
 					case "params":
 						$value = (string)$source->$field;
 						if (!empty($value)) {
@@ -172,6 +173,8 @@ class POIAction extends Action {
 	public $autoTriggerRange = NULL;
 	/** @var bool Only act on autotrigger */
 	public $autoTriggerOnly = FALSE;
+	/** @var bool Auto trigger this action. ONLY effective when applied to a referenceImage */
+	public $autoTrigger = FALSE;
 
 	/**
 	 * Constructor
@@ -186,6 +189,7 @@ class POIAction extends Action {
 	 * @param mixed $source
 	 */
 	public function __construct($source = NULL) {
+
 		if (empty($source)) {
 			return;
 		}
@@ -197,13 +201,23 @@ class POIAction extends Action {
 		} else if (is_array($source)) {
 			if (!empty($source["autoTriggerRange"])) {
 				$this->autoTriggerRange = (int)$source["autoTriggerRange"];
+      }
+      if (!empty($source["autoTriggerOnly"])) {
 				$this->autoTriggerOnly = (bool)$source["autoTriggerOnly"];
 			}
+      if (!empty($source["autoTrigger"])) {
+			  $this->autoTrigger = (bool)$source["autoTrigger"];
+      }
 		} else {
 			if (!empty($source->autoTriggerRange)) {
 				$this->autoTriggerRange = (int)$source->autoTriggerRange;
-				$this->autoTriggerOnly = (bool)((string)$source->autoTriggerOnly);
+      }
+			if (!empty($source->autoTriggerOnly)) {
+				$this->autoTriggerOnly = (bool)(string)$source->autoTriggerOnly;
 			}
+			if (!empty($source->autoTrigger)) {
+			  $this->autoTrigger = (bool)(string)$source->autoTrigger;
+      }
 		}
 	}
 }
@@ -215,11 +229,10 @@ class POIAction extends Action {
  * @package PorPOISe
  */
 class POITransform extends Arrayable {
-	/** @var boolean Specifies whether the POIs position transformation is relative to
-	 * the viewer, i.e. always facing the same direction */
-	public $rel = FALSE;
-	/** @var float Rotation angle in degrees to rotate the object around the z-axis. */
-	public $angle = 0;
+	/** @var array Contains the rel, angle and axis values */
+	public $rotate = array();
+	/** @var array Contains the x, y and z values */
+	public $translate = array();
 	/** @var float Scaling factor */
 	public $scale = 1;
 
@@ -231,17 +244,134 @@ class POITransform extends Arrayable {
 			return;
 		}
 
+		$this->rotate['axis']=array();
+
 		if (is_array($source)) {
-			$this->rel = (bool)$source["rel"];
-			$this->angle = (float)$source["angle"];
-			$this->scale = (float)$source["scale"];
+			$this->rotate['rel'] = (bool)$source["rotate"]["rel"];
+			$this->rotate['angle'] = $source["rotate"]["angle"];
+			$this->rotate['axis']['x'] = $source["rotate"]["axis"]["x"];
+			$this->rotate['axis']['y'] = $source["rotate"]["axis"]["y"];
+			$this->rotate['axis']['z'] = $source["rotate"]["axis"]["z"];
+			$this->translate['x'] = $source["translate"]["x"];
+			$this->translate['y'] = $source["translate"]["y"];
+			$this->translate['z'] = $source["translate"]["z"];
+			$this->scale = $source["scale"];
 		} else {
-			$this->rel = (bool)((string)$source->rel);	/* SimpleXMLElement objects always get cast to TRUE even when representing an empty element */
-			$this->angle = (float)$source->angle;
-			$this->scale = (float)$source->scale;
+			if (!empty($source->rotate)) {
+				$this->rotate['rel'] = (bool)(string)$source->rotate->rel;//) ? true : false;	/* SimpleXMLElement objects always get cast to TRUE even when representing an empty element */
+				$this->rotate['angle'] = (float)$source->rotate->angle;
+				if (isset($source->rotate->axis)) {
+					$this->rotate['axis']['x'] = (float)$source->rotate->axis->x;
+					$this->rotate['axis']['y'] = (float)$source->rotate->axis->y;
+					$this->rotate['axis']['z'] = (float)$source->rotate->axis->z;
+				}
+			}
+			if (!empty($source->translate)) {
+				if (isset($source->translate->x)) {
+					$this->translate['x'] = (float)$source->translate->x;
+					$this->translate['y'] = (float)$source->translate->y;
+					$this->translate['z'] = (float)$source->translate->z;
+				}
+				$this->scale = (float)$source->scale;
+			}
 		}
 	}
 }
+
+/**
+ * Holds icon information for POIs
+ *
+ * @package PorPOISe
+ */
+class POIIcon extends Arrayable {
+        /** @var string Full URL to the icon  */
+        public $url = NULL;
+		/** @var int POI iconset */
+		public $type = NULL;
+
+	/**
+	 * Constructor
+	 */
+	public function __construct($source = NULL) {
+		if (empty($source)) {
+			return;
+		}
+		if (is_array($source)) {
+            if (!empty($source["url"])) $this->url = (string)$source["url"];
+			if (!empty($source["type"])) $this->type = (int)$source["type"];
+		} else {
+            $this->url = (string)$source->url;
+			$this->type = (int)$source->type;
+		}
+	}
+}
+/**
+ * Holds Descriptive information for POIs
+ *
+ * @package PorPOISe
+ */
+class POIText extends Arrayable {
+	/** @var string Description of POI */
+	public $description = NULL;
+	/** @var string footnote text */
+	public $footnote = NULL;
+	/** @var array Title */
+	public $title = NULL;
+
+	/**
+	 * Constructor
+	 */
+	public function __construct($source = NULL) {
+		if (empty($source)) {
+			return;
+		}
+		if (is_array($source)) {
+            $this->footnote = (string)$source["footnote"];
+			$this->title = (string)$source["title"];
+			$this->description = (string)$source["description"];
+		} else {
+            $this->footnote = (string)$source->footnote;
+			$this->title = (string)$source->title;
+			$this->description = (string)$source->description;
+		}
+	}
+}
+
+
+/**
+ * Holds transformation information for multi-dimensional POIs
+ *
+ * @package PorPOISe
+ */
+class POIAnchor extends Arrayable {
+	    /** @var string Reference Image keyname */
+        public $referenceImage = '';
+        /** @var array Geolocation object */
+        public $geolocation = array();
+
+	/**
+	 * Constructor
+	 */
+	public function __construct($source = NULL) {
+		if (empty($source)) {
+			return;
+		}
+		if (is_array($source)) {
+            $this->geolocation['lat'] = $source["geolocation"]["lat"];
+			$this->geolocation['lon'] = $source["geolocation"]["lon"];
+			$this->geolocation['alt'] = $source["geolocation"]["alt"];
+			$this->referenceImage = $source["referenceImage"];
+		} else {
+			$this->geolocation['lat'] = (float)$source->geolocation->lat;
+			$this->geolocation['lon'] = (float)$source->geolocation->lon;
+			$this->geolocation['alt'] = (float)$source->geolocation->alt;
+			$this->referenceImage = (string)$source->referenceImage;
+		}
+	}
+}
+
+
+
 
 /**
  * Class for storing 2D/3D object information
@@ -249,14 +379,12 @@ class POITransform extends Arrayable {
  * @package PorPOISe
  */
 class POIObject extends Arrayable {
-	/** @var string Base URL to resolve all the other references */
-	public $baseURL;
-	/** @var string Filename of the full object */
-	public $full;
+	/** @var string Filename of the full size object (Specify complete URL)*/
+	public $url;
 	/** @var string Filename of a pre-scaled reduced object */
-	public $reduced = NULL;
-	/** @var string Filename of an icon of the object for viewing from afar */
-	public $icon = NULL;
+	public $reducedURL = NULL;
+	/** @var string Content type of the resouce */
+	public $contentType = 'image/vnd.layar.generic';
 	/** @var float Size of the object in meters, i.e. the length of the smallest cube that can contain the object */
 	public $size;
 
@@ -269,22 +397,20 @@ class POIObject extends Arrayable {
 		}
 
 		if (is_array($source)) {
-			$this->baseURL = $source["baseURL"];
-			$this->full = $source["full"];
-			if (!empty($source["reduced"])) {
-				$this->reduced = $source["reduced"];
+			$this->url = $source["url"];
+			if (!empty($source["reducedURL"])) {
+				$this->reducedURL = $source["reducedURL"];
 			}
-			if (!empty($source["icon"])) {
-				$this->icon = $source["icon"];
+			if (!empty($source["contentType"])) {
+				$this->contentType = $source["contentType"];
 			}
 			$this->size = (float)$source["size"];
 		} else {
-			foreach (array("baseURL", "full", "reduced", "icon", "size") as $fieldName) {
+			foreach (array("url", "reducedURL", "size", "contentType") as $fieldName) {
 				switch ($fieldName) {
-				case "baseURL":
-				case "full":
-				case "reduced":
-				case "icon":
+				case "url":
+				case "reducedURL":
+				case "contentType":
 					if (empty($source->$fieldName)) {
 						break;
 					}
@@ -332,7 +458,7 @@ class Animation extends Arrayable {
 		}
 		return sprintf("%s,%s,%s", $this->axis["x"], $this->axis["y"], $this->axis["z"]);
 	}
-	
+
 	public function set($key, $value) {
 		switch($key) {
 		case "axis":
@@ -368,7 +494,7 @@ class Animation extends Arrayable {
 			break;
 		}
 	}
-	
+
 	public function __construct($source = NULL) {
 		if (empty($source)) {
 			return;
@@ -396,48 +522,44 @@ class Animation extends Arrayable {
  *
  * @package PorPOISe
  */
-abstract class POI extends Arrayable {
+class POI extends Arrayable {
 	/** @var POIAction[] Possible actions for this POI */
 	public $actions = array();
+	/** @var anchor[] Anchor info for this POI */
+	public $anchor = array();
 	/** @var Animation[] Animations for this POI */
 	public $animations = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
-	/** @var string attribution text */
-	public $attribution = NULL;
+	/** @var string biwStyle defines whether the BIW should be the "classic" (common for common POIs) or "collapsed" (The default for Feature tracked POIs) or null to make the client decide */
+	public $biwStyle = null;
 	/** @var int Distance in meters between the user and this POI */
 	public $distance = NULL;
+	/** @var bool doNotIndex */
+	public $doNotIndex = FALSE;
+	/** @var array Contains icon details */
+	public $icon = array();
 	/** @var string Identifier for this POI */
 	public $id = NULL;
 	/** @var string URL of an image to show for this POI */
 	public $imageURL = NULL;
-	/** @var int Latitude of this POI in microdegrees */
-	public $lat = NULL;
-	/** @var int Longitude of this POI in microdegrees */
-	public $lon = NULL;
-	/** @var string Second line of text */
-	public $line2 = NULL;
-	/** @var string Third line of text */
-	public $line3 = NULL;
-	/** @var string Fourth line of text */
-	public $line4 = NULL;
-	/** @var string Title */
-	public $title = NULL;
-	/** @var int POI type (for custom icons) */
-	public $type = NULL;
-	/** @var bool doNotIndex */
-	public $doNotIndex = FALSE;
 	/** @var bool inFocus */
 	public $inFocus = FALSE;
+	/** @var POIObject Object specification */
+	public $object;
 	/** @var bool Show the small BIW on the bottom of the screen */
 	public $showSmallBiw = TRUE;
 	/** @var show the big BIW when the POI is tapped */
 	public $showBiwOnClick = TRUE;
-	
+	/** @var array Contains all textual descriptive information (title, description, footnote) */
+	public $text = array();
+	/** @var POITransform Transformation specification */
+	public $transform;
+
 	/**
 	 * Constructor
 	 *
 	 * $source is expected to be an array or an object, with element/member
 	 * names corresponding to the member names of POI. This allows both
-	 * constructing from an associatiev array as well as copy constructing.
+	 * constructing from an associative array as well as copy constructing.
 	 *
 	 * @param mixed $source
 	 */
@@ -454,6 +576,8 @@ abstract class POI extends Arrayable {
 							foreach ($source["actions"] as $sourceAction) {
 								$value[] = new POIAction($sourceAction);
 							}
+						} else if ($propertyName == "anchor") {
+							$value = new POIAnchor($source["anchor"]);
 						} else if ($propertyName == "animations") {
 							$value = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
 							foreach ($source["animations"] as $event => $animations) {
@@ -461,29 +585,24 @@ abstract class POI extends Arrayable {
 									$value[$event][] = new Animation($animation);
 								}
 							}
+						} else if ($propertyName == "icon") {
+							$value = new POIIcon($source["icon"]);
 						} else if ($propertyName == "object") {
 							$value = new POIObject($source["object"]);
+						} else if ($propertyName == "text") {
+							$value = new POIText($source["text"]);
 						} else if ($propertyName == "transform") {
 							$value = new POITransform($source["transform"]);
 						} else {
 							switch ($propertyName) {
-							case "dimension":
-							case "type":
-							case "alt":
-							case "relativeAlt":
-								$value = (int)$source[$propertyName];
+								case "showSmallBiw":
+								case "showBiwOnClick":
+								case "disableClueMenu":
+								case "doNotIndex":
+									$value = (bool)(string)$source[$propertyName];
 								break;
-							case "lat":
-							case "lon":
-								$value = (float)$source[$propertyName];
-								break;
-							case "showSmallBiw":
-							case "showBiwOnClick":
-							case "doNotIndex":
-								$value = (bool)(string)$source[$propertyName];
-								break;
-							default:
-								$value = (string)$source[$propertyName];
+								default:
+									$value = (string)$source[$propertyName];
 								break;
 							}
 						}
@@ -505,14 +624,16 @@ abstract class POI extends Arrayable {
 							}
 						} else if ($propertyName == "object") {
 							$value = new POIObject($source->object);
+						} else if ($propertyName == "text") {
+							$value = new POIText($source->text);
+						} else if ($propertyName == "anchor") {
+							$value = new POIAnchor($source->anchor);
 						} else if ($propertyName == "transform") {
 							$value = new POITransform($source->transform);
 						} else {
 							switch ($propertyName) {
 							case "dimension":
-							case "type":
 							case "alt":
-							case "relativeAlt":
 								$value = (int)$source->$propertyName;
 								break;
 							case "lat":
@@ -522,7 +643,7 @@ abstract class POI extends Arrayable {
 							case "showSmallBiw":
 							case "showBiwOnClick":
 							case "doNotIndex":
-								$value = (bool)(string)$source->$propertyName;
+								$value = strtolower((string)$source->$propertyName) == 'true' ? true : false;
 								break;
 							default:
 								$value = (string)$source->$propertyName;
@@ -537,61 +658,3 @@ abstract class POI extends Arrayable {
 	}
 }
 
-/**
- * Class for storing 1-dimensional POIs
- *
- * @package PorPOISe
- */
-class POI1D extends POI {
-	/** @var int Number of dimensions for this POI */
-	public $dimension = 1;
-}
-
-/**
- * Abstract superclass for storing multidimensional POIs
- *
- * @package PorPOISe
- */
-abstract class MultidimensionalPOI extends POI {
-	/** @var int Altitude of this object in meters. */
-	public $alt;
-	/** @var POITransform Transformation specification */
-	public $transform;
-	/** @var POIObject Object specification */
-	public $object;
-	/** @var int Altitude difference with respect to user's altitude */
-	public $relativeAlt;
-
-	/**
-	 * Extra constructor
-	 */
-	public function __construct($source = NULL) {
-		parent::__construct($source);
-		if (empty($this->transform)) {
-			$this->transform = new POITransform();
-		}
-		if (empty($this->object)) {
-			$this->object = new POIObject();
-		}
-	}
-}
-
-/**
- * Class for storing 2D POI information
- *
- * @package PorPOISe
- */
-class POI2D extends MultidimensionalPOI {
-	/** @var int Number of dimensions for this POI */
-	public $dimension = 2;
-}
-
-/**
- * Class for storing 3D POI information
- *
- * @package PorPOISe
- */
-class POI3D extends MultidimensionalPOI {
-	/** @var int Number of dimensions for this POI */
-	public $dimension = 3;
-}

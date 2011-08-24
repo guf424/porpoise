@@ -72,36 +72,61 @@ class SQLPOIConnector extends POIConnector  {
 	 * @return string
 	 */
 	protected function buildQuery(Filter $filter = NULL) {
-		if (empty($filter)) {
-			$sql = "SELECT * FROM POI";
-		} else {
-			$sql = "SELECT *, " . GeoUtil::EARTH_RADIUS . " * 2 * asin(
-				sqrt(
-					pow(sin((radians(" . addslashes($filter->lat) . ") - radians(lat)) / 2), 2)
-					+
-					cos(radians(" . addslashes($filter->lat) . ")) * cos(radians(lat)) * pow(sin((radians(" . addslashes($filter->lon) . ") - radians(lon)) / 2), 2)
-				)
-			) AS distance
-			FROM POI";
+		/** @var array Contains all "WHERE" clauses for the query */
+		$aWhereClauses = array();
+		$aOrderBy = array();
 
-			if (!empty($filter->requestedPoiId) || !empty($filter->radius)) {
-				$sql .= " HAVING";
-				if (!empty($filter->requestedPoiId)) {
-					$sql .= " id='" . addslashes($filter->requestedPoiId) . "'";
-					if (!empty($filter->radius)) {
-						$sql .= " AND";
-					}
-				}
-				if (!empty($filter->radius)) {
-					$sql .= " distance < (" . addslashes($filter->radius) . " + " . addslashes($filter->accuracy) . ")";
-				}
- 			}
-			$sql .= " ORDER BY distance ASC";
+		// Start with the minimal query
+		$sql = 'SELECT P.*';
+
+		// If the filter requires so, add distance calculation
+		if ($filter->lat !== NULL && $filter->lon !== NULL) {
+			$sql .= " , " . GeoUtil::EARTH_RADIUS . " * 2 * asin(sqrt(pow(sin((radians(" . addslashes($filter->lat) . ") - radians(anchor_geolocation_lat)) / 2), 2)+cos(radians(" . addslashes($filter->lat) . ")) * cos(radians(anchor_geolocation_lat)) * pow(sin((radians(" . addslashes($filter->lon) . ") - radians(anchor_geolocation_lon)) / 2), 2))) AS distance";
+			$aOrderBy[]='distance';
+		}
+
+		$sql.=' FROM POI P , Layer L';
+		$aWhereClauses[]='P.layerID = L.id';
+
+		if ($filter->layerName) {
+			$aWhereClauses[]="L.layer='".$filter->layerName."'";
+		}
+
+		/*if (!empty($filter->requestedPoiId)) {
+			$aWhereClauses[]="id='" . addslashes($filter->requestedPoiId) . "'";
+  	}*/
+		if (count($aWhereClauses)>0) {
+			$sql .= " WHERE ".implode(' AND ', $aWhereClauses);
+		}
+		if (!empty($filter->radius) && ($filter->lat !== NULL && $filter->lon !== NULL)) {
+			$sql .= ' HAVING ( distance<('.addslashes($filter->radius).'+'.addslashes($filter->accuracy).') OR anchor_referenceImage!="" )';
+		}
+		if (count($aOrderBy)>0) {
+			$sql .= ' ORDER BY '.implode(',', $aOrderBy).' ASC';
 		}
 
 		return $sql;
+
 	}
-		
+
+  /**
+   * Convert a row from the database into a multidimension POI array
+   *
+   * @param array $row
+   *
+   * @return array
+   */
+  protected static function poiRowToPOIDict($row) {
+		$row['anchor']=array();
+		$row['icon']=array();
+		$row['text']=array();
+		$row['transform']=array();
+		$row['object']=array();
+		$row = Util::simpleArrayToMultiDimArray($row);
+    return $row;
+  }
+
+
 
 	/**
 	 * Get POIs
@@ -113,25 +138,21 @@ class SQLPOIConnector extends POIConnector  {
 	 * @throws Exception
 	 */
 	public function getPOIs(Filter $filter = NULL) {
-		if (!empty($filter)) {
-			$lat = $filter->lat;
-			$lon = $filter->lon;
-			$radius = $filter->radius;
-			$accuracy = $filter->accuracy;
-		}
-
 		try {
 			$pdo = $this->getPDO();
 			$sql = $this->buildQuery($filter);
 			$stmt = $pdo->prepare($sql);
+			$stmt->setFetchMode(PDO::FETCH_ASSOC);
 			$stmt->execute();
 			$pois = array();
 			while ($row = $stmt->fetch()) {
 				$pois[] = $row;
 			}
+
 			foreach ($pois as $i => $poi) {
 				$sql = "SELECT * FROM Action WHERE poiId=?";
 				$stmt = $pdo->prepare($sql);
+				$stmt->setFetchMode(PDO::FETCH_ASSOC);
 				$stmt->execute(array($poi["id"]));
 				$pois[$i]["actions"] = array();
 				while ($row = $stmt->fetch()) {
@@ -140,38 +161,20 @@ class SQLPOIConnector extends POIConnector  {
 
 				$sql = "SELECT * FROM Animation WHERE poiId=?";
 				$stmt = $pdo->prepare($sql);
+				$stmt->setFetchMode(PDO::FETCH_ASSOC);
 				$stmt->execute(array($poi["id"]));
 				$pois[$i]["animations"] = array("onCreate" => array(), "onUpdate" => array(), "onDelete" => array(), "onFocus" => array(), "onClick" => array());
 				while ($row = $stmt->fetch()) {
 					$pois[$i]["animations"][$row["event"]][] = $row;
 				}
-
-				$sql = "SELECT * FROM Object WHERE poiID=?";
-				$stmt = $pdo->prepare($sql);
-				$stmt->execute(array($poi["id"]));
-				if ($row = $stmt->fetch()) {
-					$pois[$i]["object"] = $row;
-				}
-				
-				$sql = "SELECT * FROM Transform WHERE poiID=?";
-				$stmt = $pdo->prepare($sql);
-				$stmt->execute(array($poi["id"]));
-				if ($row = $stmt->fetch()) {
-					$pois[$i]["transform"] = $row;
-				}
 			}
 
+			foreach ($pois as $i => $poi) {
+        $pois[$i] = self::poiRowToPOIDict($poi);
+			}
 			$result = array();
 			foreach ($pois as $row) {
-				if (empty($row["dimension"]) || $row["dimension"] == 1) {
-					$poi = new POI1D($row);
-				} else if ($row["dimension"] == 2) {
-					$poi = new POI2D($row);
-				} else if ($row["dimension"] == 3) {
-					$poi = new POI3D($row);
-				} else {
-					throw new Exception("Invalid dimension: " . $row["dimension"]);
-				}
+				$poi = new POI($row);
 
 				if (!empty($filter) && !empty($filter->requestedPoiId) && $filter->requestedPoiId == $poi["id"]) {
 					// always return the requested POI at the top of the list to
@@ -201,13 +204,15 @@ class SQLPOIConnector extends POIConnector  {
 		$result = new LayarResponse();
 
 		$sql = "SELECT * FROM Layer";
-		if (!empty($filter)) {
+		if (!empty($filter->layerName)) {
 			$sql .= " WHERE layer=:layerName";
 		}
+
 		$stmt = $pdo->prepare($sql);
 		if (!empty($filter)) {
 			$stmt->bindValue(":layerName", $filter->layerName);
 		}
+		$stmt->setFetchMode(PDO::FETCH_ASSOC);
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
 			// no entry means use default
@@ -221,6 +226,7 @@ class SQLPOIConnector extends POIConnector  {
 					$result->$name = (bool)((string)$value);
 					break;
 				case "showMessage":
+				case "biwStyle":
 					$result->$name = (string)$value;
 					break;
 				default:
@@ -229,10 +235,8 @@ class SQLPOIConnector extends POIConnector  {
 				}
 			}
 		}
-
 		$result->actions = $this->getLayerActions($filter);
 		$result->animations = $this->getLayerAnimations($filter);
-
 		$result->hotspots = $this->getPOIs($filter);
 
 		return $result;
@@ -249,6 +253,7 @@ class SQLPOIConnector extends POIConnector  {
 		$pdo = $this->getPDO();
 		$sql = "SELECT * FROM Action WHERE poiId IS NULL";	/** @todo nasty, gotta fix that later */
 		$stmt = $pdo->prepare($sql);
+		$stmt->setFetchMode(PDO::FETCH_ASSOC);
 		$stmt->execute();
 		$result = array();
 		while ($row = $stmt->fetch()) {
@@ -291,7 +296,7 @@ class SQLPOIConnector extends POIConnector  {
 
 			if ($mode == "replace") {
 				// cleanup!
-				$tables = array("POI", "Action", "Animation", "Object", "Transform");
+				$tables = array("POI", "Action", "Animation");
 				foreach ($tables as $table) {
 					$sql = "DELETE FROM " . $table;
 					$stmt = $pdo->prepare($sql);
@@ -327,7 +332,7 @@ class SQLPOIConnector extends POIConnector  {
 	 * @throws Exception
 	 */
 	public function storeLayerProperties(LayarResponse $response) {
-		$layerFields = array("layer", "refreshInterval", "refreshDistance", "fullRefresh", "showMessage");
+		$layerFields = array("layer", "refreshInterval", "refreshDistance", "fullRefresh", "showMessage", "biwStyle");
 		try {
 			// let's find out if this layer already exists
 			$newLayer = TRUE;
@@ -388,14 +393,6 @@ class SQLPOIConnector extends POIConnector  {
 		$stmt = $pdo->prepare($sql);
 		$stmt->bindValue(":poiID", $poiID);
 		$stmt->execute();
-		$sql = "DELETE FROM Object WHERE poiID=:poiID";
-		$stmt = $pdo->prepare($sql);
-		$stmt->bindValue(":poiID", $poiID);
-		$stmt->execute();
-		$sql = "DELETE FROM Transform WHERE poiID=:poiID";
-		$stmt = $pdo->prepare($sql);
-		$stmt->bindValue(":poiID", $poiID);
-		$stmt->execute();
 		$sql = "DELETE FROM POI WHERE id=:id";
 		$stmt = $pdo->prepare($sql);
 		$stmt->bindValue(":id", $poiID);
@@ -415,15 +412,8 @@ class SQLPOIConnector extends POIConnector  {
 		$stmt->bindValue(":id", $id);
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
-			if (empty($row["dimension"]) || $row["dimension"] == 1) {
-				$poi = new POI1D($row);
-			} else if ($row["dimension"] == 2) {
-				$poi = new POI2D($row);
-			} else if ($row["dimension"] == 3) {
-				$poi = new POI3D($row);
-			} else {
-				throw new Exception("Invalid dimension: " . $row["dimension"]);
-			}
+      $row = self::poiRowToPOIDict($row);
+      $poi = new POI($row);
 		}
 		return $poi;
 	}
@@ -438,8 +428,38 @@ class SQLPOIConnector extends POIConnector  {
 	 */
 	protected function savePOI(POI $poi) {
 		$pdo = $this->getPDO();
-		$poiFields = array("alt","attribution","dimension","imageURL","lat","lon","line2","line3","line4","relativeAlt","title","type","doNotIndex","showSmallBiw","showBiwOnClick");
-		
+
+		$flatPoiData = Array();
+		foreach (array('doNotIndex', 'imageURL', 'showBiwOnClick', 'showSmallBiw') as $poiField) {
+			$flatPoiData[$poiField] = $poi->$poiField;
+		}
+
+		// Certain subobjects of the POI object do not have a 1-to-n relationship with the actual POI so they are stored with the POI itself.
+		// Therefor "anchor","text" and "icon" are being "flattened" to normal.
+		$flatPoiData['anchor_geolocation_lat'] = $poi->anchor->geolocation['lat'];
+		$flatPoiData['anchor_geolocation_lon'] = $poi->anchor->geolocation['lon'];
+		$flatPoiData['anchor_geolocation_alt'] = $poi->anchor->geolocation['alt'];
+		$flatPoiData['anchor_referenceImage'] = $poi->anchor->referenceImage;
+		$flatPoiData['text_title'] = $poi->text->title;
+		$flatPoiData['text_description'] = $poi->text->description;
+		$flatPoiData['text_footnote'] = $poi->text->footnote;
+		$flatPoiData['icon_type'] = $poi->icon->type;
+		$flatPoiData['icon_url'] = $poi->icon->url;
+		$flatPoiData['object_url'] = $poi->object->url;
+		$flatPoiData['object_reducedURL'] = $poi->object->reducedURL;
+		$flatPoiData['object_size'] = $poi->object->size;
+		$flatPoiData['object_contentType'] = $poi->object->contentType;
+		$flatPoiData['transform_rotate_angle'] = $poi->transform->rotate['angle'];
+		$flatPoiData['transform_scale'] = $poi->transform->scale;
+		$flatPoiData['transform_rotate_rel'] = $poi->transform->rotate['rel'];
+		$flatPoiData['transform_rotate_axis_x'] = $poi->transform->rotate['axis']['x'];
+		$flatPoiData['transform_rotate_axis_y'] = $poi->transform->rotate['axis']['y'];
+		$flatPoiData['transform_rotate_axis_z'] = $poi->transform->rotate['axis']['z'];
+		$flatPoiData['transform_translate_x'] = $poi->transform->translate['x'];
+		$flatPoiData['transform_translate_y'] = $poi->transform->translate['y'];
+		$flatPoiData['transform_translate_z'] = $poi->transform->translate['z'];
+
+
 		// is this a new POI or not?
 		$isNewPOI = TRUE;
 		if (isset($poi->id)) {
@@ -451,35 +471,55 @@ class SQLPOIConnector extends POIConnector  {
 
 		// build update or insert SQL string
 		if ($isNewPOI) {
-			$sql = "INSERT INTO POI (" . implode(",", $poiFields) . ")
-			        VALUES (:" . implode(",:", $poiFields) . ")";
+			// Fetch the layer ID that matches with the POI's layerName
+			$layerID = $this->fetchLayerIdForName($poi->layerName);
+			// Create the SQL query that inserts the new POI.
+			$sql = "INSERT INTO POI (" . implode(",", array_keys($flatPoiData)) . ", layerID)
+			        VALUES (:" . implode(",:", array_keys($flatPoiData)) . ", :layerID)";
 		} else {
 			$sql = "UPDATE POI SET ";
 			$kvPairs = array();
-			foreach ($poiFields as $poiField) {
-				$kvPairs[] = sprintf("%s=:%s", $poiField, $poiField);
+			foreach (array_keys($flatPoiData) as $sKey) {
+				$kvPairs[] = sprintf("%s=:%s", $sKey, $sKey);
 			}
+
 			$sql .= implode(",", $kvPairs);
 			$sql .= " WHERE id=:id";
 		}
 
 		$stmt = $pdo->prepare($sql);
-		foreach ($poiFields as $poiField) {
-			$stmt->bindValue(":" . $poiField, $poi->$poiField);
+
+		if ($isNewPOI) $stmt->bindValue(":layerID", $layerID);
+		foreach ($flatPoiData as $sKey =>$mValue) {
+			$stmt->bindValue(":" . $sKey, $mValue);
 		}
 		if (!$isNewPOI) {
 			$stmt->bindValue(":id", $poi->id);
 		}
 		$stmt->execute();
+
 		if ($isNewPOI) {
 			$poi->id = $pdo->lastInsertId();
 		}
+
 		$this->saveActions($poi->id, $poi->actions);
 		$this->saveAnimations($poi->id, $poi->animations);
-		if ($poi->dimension > 1) {
-			$this->saveObject($poi->id, $poi->object);
-			$this->saveTransform($poi->id, $poi->transform);
+	}
+
+	private function fetchLayerIdForName($sLayerName) {
+		if (!empty($sLayerName)) {
+			$pdo = $this->getPDO();
+			$sql = 'SELECT id FROM layer WHERE layer=:sLayerName';
+			$stmt = $pdo->prepare($sql);
+			$stmt->bindValue(":sLayerName", $sLayerName);
+			$stmt->setFetchMode(PDO::FETCH_ASSOC);
+			$stmt->execute();
+			if ($stmt->rowCount() > 0) {
+				$row = $stmt->fetch();
+				return (int)$row['id'];
+			}
 		}
+		return false;
 	}
 
 	/**
@@ -492,7 +532,7 @@ class SQLPOIConnector extends POIConnector  {
 	 * @return void
 	 */
 	protected function saveActions($poiID, array $actions) {
-		$actionFields = array("uri", "label", "autoTriggerRange", "autoTriggerOnly", "contentType", "method", "activityType", "params", "closeBiw", "showActivity", "activityMessage");
+		$actionFields = array("uri", "label", "autoTriggerRange", "autoTriggerOnly", "autoTrigger", "contentType", "method", "activityType", "params", "closeBiw", "showActivity", "activityMessage");
 		$pdo = $this->getPDO();
 
 		// cleanup old
@@ -562,69 +602,16 @@ class SQLPOIConnector extends POIConnector  {
 				$stmt->bindValue(":from", $animation->from);
 				$stmt->bindValue(":to", $animation->to);
 				$stmt->bindValue(":axis", $animation->axisString());
-		
+
 				$stmt->bindValue(":poiID", $poiID);
 				$stmt->execute();
 			}
 		}
 	}
 
-	/**
-	 * Save an Object for a POI
-	 *
-	 * Deletes old Object if it exists
-	 *
-	 * @param int $poiID
-	 * @param POIObject $object
-	 * @return void
-	 */
-	protected function saveObject($poiID, POIObject $object) {
-		$objectFields = array("baseURL", "full", "reduced", "icon", "size");
-		$pdo = $this->getPDO();
 
-		$sql = "DELETE FROM Object WHERE poiID=:poiID";
-		$stmt = $pdo->prepare($sql);
-		$stmt->bindValue(":poiID", $poiID);
-		$stmt->execute();
-		
-		$sql = "INSERT INTO Object (poiID," . implode(",", $objectFields) . ") VALUES (:poiID,:" . implode(",:", $objectFields) . ")";
-		$stmt = $pdo->prepare($sql);
-		foreach ($objectFields as $objectField) {
-			$stmt->bindValue(":" . $objectField, $object->$objectField);
-		}
-		$stmt->bindValue(":poiID", $poiID);
-		$stmt->execute();
-	}
 
-	/**
-	 * Save a Transform for a POI
-	 *
-	 * Deletes old Transform if it exists
-	 *
-	 * @param int $poiID
-	 * @param POITransform $transform
-	 * @return void
-	 */
-	protected function saveTransform($poiID, POITransform $transform) {
-		$transformFields = array("angle", "rel", "scale");
-		$pdo = $this->getPDO();
-		
-		$sql = "DELETE FROM Transform WHERE poiID=:poiID";
-		$stmt = $pdo->prepare($sql);
-		$stmt->bindValue(":poiID", $poiID);
-		$stmt->execute();
-		
-		$sql = "INSERT INTO Transform (poiID," . implode(",", $transformFields) . ") VALUES (:poiID,:" . implode(",:", $transformFields) . ")";
-		$stmt = $pdo->prepare($sql);
-		foreach ($transformFields as $transformField) {
-			$stmt->bindValue(":" . $transformField, $transform->$transformField);
-		}
-		$stmt->bindValue(":poiID", $poiID);
-		$stmt->execute();
-	}
-	
 	public function setOption($name, $value) {
 		// dummy
 	}
-
 }

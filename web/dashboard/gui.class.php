@@ -52,7 +52,7 @@ class GUI {
 	 * Print a formatted message
 	 *
 	 * @param string $message sprintf-formatted message
-	 * 
+	 *
 	 * @return void
 	 */
 	public static function printMessage($message) {
@@ -82,7 +82,7 @@ class GUI {
 	 */
 	public static function createHeader() {
 		return
-<<<HTML
+		<<<HTML
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -112,7 +112,7 @@ HTML;
 	 */
 	public static function createFooter() {
 		return
-<<<HTML
+		<<<HTML
 </div> <!-- end main div -->
 </body>
 </html>
@@ -131,7 +131,7 @@ HTML;
 	protected static function createSelect($name, $options, $selected = NULL) {
 		$result = sprintf("<select name=\"%s\">\n", $name);
 		foreach ($options as $value => $label) {
-			$result .= sprintf("<option value=\"%s\"%s>%s</option>\n", $value, ($value ==  $selected ? " selected" : ""), $label);
+			$result .= sprintf("<option value=\"%s\"%s>%s</option>\n", $value, ($value == $selected ? " selected" : ""), $label);
 		}
 		$result .="</select>\n";
 		return $result;
@@ -228,11 +228,12 @@ HTML;
 		$result .= sprintf("<tr><td>Refresh interval</td><td><input type=\"text\" name=\"refreshInterval\" value=\"%s\"></td></tr>\n", $layerProperties->refreshInterval);
 		$result .= sprintf("<tr><td>Refresh distance</td><td><input type=\"text\" name=\"refreshDistance\" value=\"%s\"></td></tr>\n", $layerProperties->refreshDistance);
 		$result .= sprintf("<tr><td>Full refresh</td><td>%s</td></tr>\n", self::createCheckbox("fullRefresh", $layerProperties->fullRefresh));
+		$result .= sprintf("<tr><td>Default BIW Style</td><td><input type=\"text\" name=\"biwStyle\" value=\"%s\"></td></tr>\n", $layerProperties->biwStyle);
 		foreach ($layerProperties->actions as $key => $action) {
 			$result .= sprintf("<tr><td>Action<br><button type=\"button\" onclick=\"GUI.removeLayerAction(%s)\">Remove</button></td><td>%s</td></tr>\n", $key, self::createActionSubtable($key, $action, TRUE));
 		}
 		$result .= sprintf("<tr><td colspan=\"2\"><button type=\"button\" onclick=\"GUI.addLayerAction(this)\">New action</button></td></tr>\n");
-		
+
 		$index = 0;
 		foreach ($layerProperties->animations as $event => $animations) {
 			foreach ($animations as $animation) {
@@ -245,7 +246,14 @@ HTML;
 		$result .= sprintf("</table>\n");
 		$result .= sprintf("</form>\n");
 
-		$result .= sprintf("<p><a href=\"?action=newPOI&layerName=%s\">New POI</a></p>\n", urlencode($layerName));
+
+		$result .= sprintf("<form accept-charset=\"utf-8\" action=\"?action=newPOI&layerName=%s\" method=\"POST\">\n", urlencode($layerName));
+		$result .= '<input type="hidden" name="dimension" value="2">';
+		$result .= '<input type="hidden" name="layerName" value="'.urlencode($layerName).'">';
+		$result .= '<button type="submit">Create POI</button>';
+		$result .= '</form><br/>';
+
+//		$result .= sprintf("<p><a href=\"?action=newPOI&layerName=%s\">New POI</a></p>\n", urlencode($layerName));
 		$result .= self::createPOITable($layerName);
 		return $result;
 	}
@@ -264,11 +272,10 @@ HTML;
 			throw new Exception("Error retrieving POIs");
 		}
 		$result .= "<table class=\"pois\">\n";
-		$result .= "<tr><th>Title</th><th>Lat/lon</th></tr>\n";
+		$result .= "<tr><th>Title</th><th>&nbsp;</th></tr>\n";
 		foreach ($pois as $poi) {
 			$result .= "<tr>\n";
-			$result .= sprintf("<td><a href=\"?action=poi&layerName=%s&poiID=%s\">%s</a></td>\n", urlencode($layerName), urlencode($poi->id), ($poi->title ? $poi->title : "&lt;no title&gt;"));
-			$result .= sprintf("<td>%s,%s</td>\n", $poi->lat, $poi->lon);
+			$result .= sprintf("<td><a href=\"?action=poi&layerName=%s&poiID=%s\">%s</a></td>\n", urlencode($layerName), urlencode($poi->id), ($poi->text->title ? $poi->text->title : "&lt;no title&gt;"));
 			$result .= sprintf("<td><form accept-charset=\"utf-8\" action=\"?action=deletePOI\" method=\"POST\"><input type=\"hidden\" name=\"layerName\" value=\"%s\"><input type=\"hidden\" name=\"poiID\" value=\"%s\"><button type=\"submit\">Delete</button></form></td>\n", urlencode($layerName), urlencode($poi->id));
 			$result .= "</tr>\n";
 		}
@@ -286,37 +293,43 @@ HTML;
 	 */
 	public static function createPOIScreen($layerName, $poi = NULL) {
 		if (empty($poi)) {
-			$poi = new POI1D();
+			$poi = new POI();
 		}
+
 		$result = "";
 		$result .= sprintf("<p><a href=\"?action=layer&layerName=%s\">Back to %s</a></p>\n", urlencode($layerName), $layerName);
 		$result .= sprintf("<form accept-charset=\"utf-8\" action=\"?layerName=%s&action=poi&poiID=%s\" method=\"POST\">\n", urlencode($layerName), urlencode($poi->id));
 		$result .= "<table class=\"poi\">\n";
+		$result .= '<tr><th colspan="2">General</th></tr>';
 		$result .= sprintf("<tr><td>ID</td><td><input type=\"hidden\" name=\"id\" value=\"%s\">%s</td></tr>\n", $poi->id, $poi->id);
-		$result .= sprintf("<tr><td>Title</td><td><input type=\"text\" name=\"title\" value=\"%s\"></td></tr>\n", $poi->title);
-		$result .= sprintf("<tr><td>Lat/lon</td><td><input type=\"text\" name=\"lat\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"lon\" value=\"%s\" size=\"7\"></td></tr>\n", $poi->lat, $poi->lon);
-		$result .= sprintf("<tr><td>Line 2</td><td><input type=\"text\" name=\"line2\" value=\"%s\"></td></tr>\n", $poi->line2);
-		$result .= sprintf("<tr><td>Line 3</td><td><input type=\"text\" name=\"line3\" value=\"%s\"></td></tr>\n", $poi->line3);
-		$result .= sprintf("<tr><td>Line 4</td><td><input type=\"text\" name=\"line4\" value=\"%s\"></td></tr>\n", $poi->line4);
-		$result .= sprintf("<tr><td>Attribution</td><td><input type=\"text\" name=\"attribution\" value=\"%s\"></td></tr>\n", $poi->attribution);
+		$result .= sprintf("<tr><td>Title</td><td><input type=\"text\" name=\"text_title\" value=\"%s\"></td></tr>\n", $poi->text->title);
+		$result .= sprintf("<tr><td>Description</td><td><textarea name=\"text_description\">%s</textarea></td></tr>\n", $poi->text->description);
+		$result .= sprintf("<tr><td>Footnote</td><td><input type=\"text\" name=\"text_footnote\" value=\"%s\"></td></tr>\n", $poi->text->footnote);
 		$result .= sprintf("<tr><td>Image URL</td><td><input type=\"text\" name=\"imageURL\" value=\"%s\"></td></tr>\n", $poi->imageURL);
-		$result .= sprintf("<tr><td>Type</td><td><input type=\"text\" name=\"type\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->type);
 		$result .= sprintf("<tr><td>Prevent indexing</td><td>%s</td></tr>\n", self::createCheckbox("doNotIndex", $poi->doNotIndex));
 		$result .= sprintf("<tr><td>Show small BIW</td><td>%s</td></tr>\n", self::createCheckbox("showSmallBiw", $poi->showSmallBiw));
 		$result .= sprintf("<tr><td>Show BIW when clicked</td><td>%s</td></tr>\n", self::createCheckbox("showBiwOnClick", $poi->showBiwOnClick));
-		$result .= sprintf("<tr><td>Dimension</td><td><input type=\"text\" name=\"dimension\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->dimension);
-		$result .= sprintf("<tr><td>Absolute altitude</td><td><input type=\"text\" name=\"alt\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->alt);
-		$result .= sprintf("<tr><td>Relative altitude</td><td><input type=\"text\" name=\"relativeAlt\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->relativeAlt);
-		if ($poi->dimension > 1) {
-			$result .= sprintf("<tr><td>Base URL for model</td><td><input type=\"text\" name=\"baseURL\" value=\"%s\"></td></tr>\n", $poi->object->baseURL);
-			$result .= sprintf("<tr><td>Full model</td><td><input type=\"text\" name=\"full\" value=\"%s\"></td></tr>\n", $poi->object->full);
-			$result .= sprintf("<tr><td>Reduced model</td><td><input type=\"text\" name=\"reduced\" value=\"%s\"></td></tr>\n", $poi->object->reduced);
-			$result .= sprintf("<tr><td>Model icon</td><td><input type=\"text\" name=\"icon\" value=\"%s\"></td></tr>\n", $poi->object->icon);
-			$result .= sprintf("<tr><td>Model size (approx)</td><td><input type=\"text\" name=\"size\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->object->size);
-			$result .= sprintf("<tr><td>Scaling factor</td><td><input type=\"text\" name=\"scale\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->transform->scale);
-			$result .= sprintf("<tr><td>Vertical rotation</td><td><input type=\"text\" name=\"angle\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->transform->angle);
-			$result .= sprintf("<tr><td>Relative angle</td><td>%s</td></tr>\n", self::createCheckbox("rel", $poi->transform->rel));
-		}
+		$result .= '<tr><th colspan="2">Anchor</th></tr>';
+		$result .= sprintf("<tr><td>Lat/lon/alt</td><td><input type=\"text\" name=\"anchor_geolocation_lat\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"anchor_geolocation_lon\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"anchor_geolocation_alt\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->anchor->geolocation['lat'], $poi->anchor->geolocation['lon'], $poi->anchor->geolocation['alt']);
+		$result .= sprintf("<tr><td>referenceImage</td><td><input type=\"text\" name=\"anchor_referenceImage\" value=\"%s\" size=\"64\"></td></tr>\n", $poi->anchor->referenceImage);
+		$result .= '<tr><th colspan="2">Icon</th></tr>';
+		$result .= sprintf("<tr><td>Icon type</td><td><input type=\"text\" name=\"icon_type\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->icon->type);
+		$result .= sprintf("<tr><td>Icon URL</td><td><input type=\"text\" name=\"icon_url\" value=\"%s\" size=\"32\" maxlength=\"128\"></td></tr>\n", $poi->icon->url);
+		/* Object */
+		$result .= '<tr><th colspan="2">Object</th></tr>';
+		$result .= sprintf("<tr><td>Full model</td><td><input type=\"text\" name=\"object_url\" value=\"%s\" size=\"64\"></td></tr>\n", $poi->object->url);
+		$result .= sprintf("<tr><td>Reduced model</td><td><input type=\"text\" name=\"object_reducedURL\" value=\"%s\" size=\"64\"></td></tr>\n", $poi->object->reducedURL);
+		$result .= sprintf("<tr><td>Content Type</td><td><input type=\"text\" name=\"object_contentType\" value=\"%s\" size=\"32\"></td></tr>\n", $poi->object->contentType);
+		$result .= sprintf("<tr><td>Model size (approx)</td><td><input type=\"text\" name=\"object_size\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->object->size);
+
+		/* Transform */
+		$result .= '<tr><th colspan="2">Transform</th></tr>';
+		$result .= sprintf("<tr><td>Rotate over axis x/y/z</td><td><input type=\"text\" name=\"transform_rotate_axis_x\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"transform_rotate_axis_y\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"transform_rotate_axis_z\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->transform->rotate['axis']['x'], $poi->transform->rotate['axis']['y'], $poi->transform->rotate['axis']['z']);
+		$result .= sprintf("<tr><td>Angle</td><td><input type=\"text\" name=\"transform_rotate_angle\" value=\"%s\" size=\"1\"></td></tr>\n", $poi->transform->rotate['angle']);
+		$result .= sprintf("<tr><td>Use relative angle?</td><td>%s</td></tr>\n", self::createCheckbox("transform_rotate_rel", $poi->transform->rotate['rel']));
+		$result .= sprintf("<tr><td>Translate x/y/z</td><td><input type=\"text\" name=\"transform_translate_x\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"transform_translate_y\" value=\"%s\" size=\"7\"><input type=\"text\" name=\"transform_translate_z\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->transform->translate['x'], $poi->transform->translate['y'], $poi->transform->translate['z']);
+		$result .= sprintf("<tr><td>Scaling factor</td><td><input type=\"text\" name=\"transform_scale\" value=\"%s\" size=\"2\"></td></tr>\n", $poi->transform->scale);
+		$result .= '<tr><th colspan="2">Actions</th></tr>';
 		foreach ($poi->actions as $key => $action) {
 			$result .= sprintf("<tr><td>Action<br><button type=\"button\" onclick=\"GUI.removePOIAction(%s)\">Remove</button></td><td>%s</td></tr>\n", $key, self::createActionSubtable($key, $action));
 		}
@@ -351,8 +364,9 @@ HTML;
 		$result .= sprintf("<tr><td>Label</td><td><input type=\"text\" name=\"actions[%s][label]\" value=\"%s\"></td></tr>\n", $index, $action->label);
 		$result .= sprintf("<tr><td>URI</td><td><input type=\"text\" name=\"actions[%s][uri]\" value=\"%s\"></td></tr>\n", $index, $action->uri);
 		if (!$layerAction) {
-			$result .= sprintf("<tr><td>Auto-trigger range</td><td><input type=\"text\" name=\"actions[%s][autoTriggerRange]\" value=\"%s\" size=\"2\"></td></tr>\n", $index, $action->autoTriggerRange);
-			$result .= sprintf("<tr><td>Auto-trigger only</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("actions[%s][autoTriggerOnly]", $index), $action->autoTriggerOnly));
+			$result .= sprintf("<tr><td>Auto-trigger range (Geo POIs only)</td><td><input type=\"text\" name=\"actions[%s][autoTriggerRange]\" value=\"%s\" size=\"2\"></td></tr>\n", $index, $action->autoTriggerRange);
+			$result .= sprintf("<tr><td>Auto-trigger only (Geo POIs only)</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("actions[%s][autoTriggerOnly]", $index), $action->autoTriggerOnly));
+			$result .= sprintf("<tr><td>Auto-trigger (Feat. tracked POIs only)</td><td>%s</td></tr>\n", self::createCheckbox(sprintf("actions[%s][autoTrigger]", $index), $action->autoTrigger));
 		}
 		$result .= sprintf("<tr><td>Content type</td><td><input type=\"text\" name=\"actions[%s][contentType]\" value=\"%s\">\n", $index, $action->contentType);
 		$result .= sprintf("<tr><td>Method</td><td>%s</td></tr>\n", self::createSelect(sprintf("actions[%s][method]", $index), array("GET" => "GET", "POST" => "POST"), $action->method));
@@ -413,7 +427,6 @@ HTML;
 		return $result;
 	}
 
-
 	/**
 	 * Create a screen for a new POI
 	 *
@@ -464,13 +477,13 @@ HTML;
 		/* preserve POST */
 		foreach ($_POST as $key => $value) {
 			switch ($key) {
-			case "username":
-			case "password":
-			case "logout":
-				break;
-			default:
-				$result .= sprintf("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", $key, $value);
-				break;
+				case "username":
+				case "password":
+				case "logout":
+					break;
+				default:
+					$result .= sprintf("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", $key, $value);
+					break;
 			}
 		}
 
@@ -503,41 +516,41 @@ HTML;
 	 *
 	 * @throws Exception When invalid data is passed in POST
 	 */
-	public static function handlePOST () {
+	public static function handlePOST() {
 		$post = $_POST;
 		/* not interested in login attempts */
 		unset($post["username"]);
 		unset($post["password"]);
-		
+
 		if (empty($post)) {
 			/* nothing interesting in POST */
 			return;
 		}
 		$action = $_REQUEST["action"];
 		switch ($action) {
-		case "poi":
-			$poi = self::makePOIFromRequest($post);
-			DML::savePOI($_REQUEST["layerName"], $poi);
-			break;
-		case "newPOI":
-			$poi = self::makePOIFromRequest($post);
-			DML::savePOI($_REQUEST["layerName"], $poi);
-			self::redirect("layer", array("layerName" => $_REQUEST["layerName"]));
-			break;
-		case "deletePOI":
-			DML::deletePOI($_REQUEST["layerName"], $_REQUEST["poiID"]);
-			self::redirect("layer", array("layerName" => $_REQUEST["layerName"]));
-			break;
-		case "migrate":
-			DML::migrateLayers($_REQUEST["from"], $_REQUEST["to"]);
-			break;
-		case "layer":
-			$layerProperties = self::makeLayerPropertiesFromRequest($post);
-			$layerProperties->layer = $_REQUEST["layerName"];
-			DML::saveLayerProperties($_REQUEST["layerName"], $layerProperties);
-			break;
-		default:
-			throw new Exception(sprintf("No POST handler defined for action %s\n", $action));
+			case "poi":
+				$poi = self::makePOIFromRequest($post);
+				DML::savePOI($_REQUEST["layerName"], $poi);
+				break;
+			case "newPOI":
+				$poi = self::makePOIFromRequest($post);
+				DML::savePOI($_REQUEST["layerName"], $poi);
+				self::redirect("layer", array("layerName" => $_REQUEST["layerName"]));
+				break;
+			case "deletePOI":
+				DML::deletePOI($_REQUEST["layerName"], $_REQUEST["poiID"]);
+				self::redirect("layer", array("layerName" => $_REQUEST["layerName"]));
+				break;
+			case "migrate":
+				DML::migrateLayers($_REQUEST["from"], $_REQUEST["to"]);
+				break;
+			case "layer":
+				$layerProperties = self::makeLayerPropertiesFromRequest($post);
+				$layerProperties->layer = $_REQUEST["layerName"];
+				DML::saveLayerProperties($_REQUEST["layerName"], $layerProperties);
+				break;
+			default:
+				throw new Exception(sprintf("No POST handler defined for action %s\n", $action));
 		}
 	}
 
@@ -549,67 +562,83 @@ HTML;
 	 * @return POI
 	 */
 	protected static function makePOIFromRequest($request) {
-		switch ($request["dimension"]) {
-		case "1":
-			$result = new POI1D();
-			break;
-		case "2":
-			$result = new POI2D();
-			break;
-		case "3":
-			$result = new POI3D();
-			break;
-		default:
-			throw new Exception("Invalid dimension: %d\n", $request["dimension"]);
-		}
-
+		$result = new POI();
 		foreach ($request as $key => $value) {
 			switch ($key) {
-			case "dimension":
-			case "type":
-			case "alt":
-			case "relativeAlt":
-				$result->$key = (int)$request[$key];
-				break;
-			case "lat":
-			case "lon":
-				$result->$key = (float)$request[$key];
-				break;
-			case "baseURL":
-			case "full":
-			case "reduced":
-			case "icon":
-				$result->object->$key = (string)$request[$key];
-				break;
-			case "size":
-				$result->object->$key = (int)$request[$key];
-				break;
-			case "angle":
-				$result->transform->$key = (int)$request[$key];
-				break;
-			case "rel":
-				$result->transform->$key = (bool)$request[$key];
-				break;
-			case "scale":
-				$result->transform->$key = (float)$request[$key];
-				break;
-			case "actions":
-				foreach ($value as $action) {
-					$result->actions[] = new POIAction($action);
-				}
-				break;
-			case "animations":
-				foreach ($value as $animation) {
-					$animationObj = new Animation($animation);
-					$result->animations[$animation["event"]][] = $animationObj;
-				}
-				break;
-			default:
-				$result->$key = (string)$request[$key];
-				break;
+				case 'icon_url':
+				case 'anchor_referenceImage':
+				case 'imageURL':
+				case 'object_reducedURL':
+				case 'object_url':
+				case 'text_description':
+				case 'text_footnote':
+				case 'text_title':
+					$request[$key] = (string) $request[$key];
+					break;
+				case 'icon_type':
+				case 'id':
+				case 'transform_rotate_angle':
+					$request[$key] = (int) $request[$key];
+					break;
+				case 'doNotIndex':
+				case 'showBiwOnClick':
+				case 'showSmallBiw':
+				case 'transform_rotate_rel':
+					$request[$key] = (bool) $request[$key];
+					break;
+				case 'anchor_geolocation_alt':
+				case 'anchor_geolocation_lat':
+				case 'anchor_geolocation_lon':
+				case 'object_size':
+				case 'transform_scale':
+				case 'transform_translate_x':
+				case 'transform_translate_y':
+				case 'transform_translate_z':
+				case 'transform_rotate_axis_x':
+				case 'transform_rotate_axis_y':
+				case 'transform_rotate_axis_z':
+					$request[$key] = (float) $request[$key];
+					break;
+				case "actions":
+					foreach ($value as $action) {
+						$result->actions[] = new POIAction($action);
+					}
+					break;
+				case "animations":
+					foreach ($value as $animation) {
+						$animationObj = new Animation($animation);
+						$result->animations[$animation["event"]][] = $animationObj;
+					}
+					break;
 			}
 		}
-		
+
+		// Now convert array keys like "transform_rotate_axis_x" into ['transform']['rotate_axis_x'] and remove their source variable
+		$request = Util::simpleArrayToMultiDimArray($request);
+
+
+		// Run over all input once more to assign freshly created arrays to the POI
+		foreach ($request as $key => $value) {
+			switch($key) {
+				case "icon":
+					$result->icon = new POIIcon($value);
+					break;
+				case "text":
+					$result->text = new POIText($value);
+					break;
+				case "anchor":
+					$result->anchor = new POIAnchor($value);
+					break;
+				case "transform":
+					$result->transform = new POITransform($value);
+					break;
+				case "object":
+					$result->object = new POIObject($value);
+					break;
+				default:
+					if (!is_array($request[$key])) $result->$key = $value;
+			}
+		}
 		return $result;
 	}
 
@@ -623,28 +652,29 @@ HTML;
 	public static function makeLayerPropertiesFromRequest($request) {
 		$result = new LayarResponse();
 		foreach ($request as $name => $value) {
-			switch($name) {
-			case "showMessage":
-				$result->$name = (string)$value;
-				break;
-			case "refreshInterval":
-			case "refreshDistance":
-				$result->$name = (int)$value;
-				break;
-			case "fullRefresh":
-				$result->$name = (bool)(string)$value;
-				break;
-			case "actions":
-				foreach ($value as $action) {
-					$result->actions[] = new Action($action);
-				}
-				break;
-			case "animations":
-				foreach ($value as $animation) {
-					$animationObj = new Animation($animation);
-					$result->animations[$animation["event"]][] = $animationObj;
-				}
-				break;
+			switch ($name) {
+				case "showMessage":
+				case "biwStyle":
+					$result->$name = (string) $value;
+					break;
+				case "refreshInterval":
+				case "refreshDistance":
+					$result->$name = (int) $value;
+					break;
+				case "fullRefresh":
+					$result->$name = (bool) (string) $value;
+					break;
+				case "actions":
+					foreach ($value as $action) {
+						$result->actions[] = new Action($action);
+					}
+					break;
+				case "animations":
+					foreach ($value as $animation) {
+						$animationObj = new Animation($animation);
+						$result->animations[$animation["event"]][] = $animationObj;
+					}
+					break;
 			}
 		}
 		return $result;
@@ -679,5 +709,5 @@ HTML;
 		header("Location: " . $location);
 		exit();
 	}
-			
+
 }

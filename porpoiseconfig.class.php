@@ -104,13 +104,13 @@ class PorPOISeConfig {
 			} else {
 				$def->source = (string)$node->source;
 			}
-			
+
 			/* web app configuration */
 			if (isset($node->web_app)) {
 				$def->web_app["name"] = (string)$node->web_app->name;
 				$def->web_app["file"] = (string)$node->web_app->file;
 			}
-			
+
 			/* load OAuth settings */
 			if (isset($node->oauth)) {
 				$oauth = $def->oauth;
@@ -121,7 +121,7 @@ class PorPOISeConfig {
 				$oauth->setAccessTokenUrl($baseUrl . (string)$node->oauth->tokenPath->access);
 				$oauth->setAuthorizeTokenUrl($baseUrl . (string)$node->oauth->tokenPath->authorize);
 			}
-			
+
 			$this->layerDefinitions[] = $def;
 		}
 	}
@@ -143,7 +143,7 @@ class PorPOISeConfig {
 		$dom->formatOutput = TRUE;
 
 		$root = $dom->appendChild($dom->createElement("porpoise-configuration"));
-		
+
 		$root->appendChild($dom->createElement("developer-id", $this->developerID));
 		$root->appendChild($dom->createElement("developer-key", $this->developerKey));
 
@@ -209,7 +209,7 @@ class LayerDefinition {
 
 	/** @var int Source type */
 	protected $sourceType = self::FILE;
-	
+
 	public function __construct() {
 		$this->oauth = new OAuthSetup();
 	}
@@ -253,7 +253,7 @@ class LayerDefinition {
 
 /**
  * Class for holding OAuth credentials and params
- * 
+ *
  * @package PorPOISe
  */
 class OAuthSetup {
@@ -262,7 +262,7 @@ class OAuthSetup {
 	protected $requestTokenUrl = '';
 	protected $accessTokenUrl = '';
 	protected $authorizeTokenUrl = '';
-	
+
     /**
      * Returns $accessTokenUrl.
      * @see OAuthSetup::$accessTokenUrl
@@ -271,7 +271,7 @@ class OAuthSetup {
     {
         return $this->accessTokenUrl;
     }
-    
+
     /**
      * Sets $accessTokenUrl.
      * @param object $accessTokenUrl
@@ -281,7 +281,7 @@ class OAuthSetup {
     {
         $this->accessTokenUrl = $accessTokenUrl;
     }
-    
+
     /**
      * Returns $authorizeTokenUrl.
      * @see OAuthSetup::$authorizeTokenUrl
@@ -290,7 +290,7 @@ class OAuthSetup {
     {
         return $this->authorizeTokenUrl;
     }
-    
+
     /**
      * Sets $authorizeTokenUrl.
      * @param object $authorizeTokenUrl
@@ -300,7 +300,7 @@ class OAuthSetup {
     {
         $this->authorizeTokenUrl = $authorizeTokenUrl;
     }
-    
+
     /**
      * Returns $consumerKey.
      * @see OAuthSetup::$consumerKey
@@ -309,7 +309,7 @@ class OAuthSetup {
     {
         return $this->consumerKey;
     }
-    
+
     /**
      * Sets $consumerKey.
      * @param object $consumerKey
@@ -319,7 +319,7 @@ class OAuthSetup {
     {
         $this->consumerKey = $consumerKey;
     }
-    
+
     /**
      * Returns $requestTokenUrl.
      * @see OAuthSetup::$requestTokenUrl
@@ -328,7 +328,7 @@ class OAuthSetup {
     {
         return $this->requestTokenUrl;
     }
-    
+
     /**
      * Sets $requestTokenUrl.
      * @param object $requestTokenUrl
@@ -338,7 +338,7 @@ class OAuthSetup {
     {
         $this->requestTokenUrl = $requestTokenUrl;
     }
-    
+
     /**
      * Returns $secretKey.
      * @see OAuthSetup::$secretKey
@@ -347,7 +347,7 @@ class OAuthSetup {
     {
         return $this->secretKey;
     }
-    
+
     /**
      * Sets $secretKey.
      * @param object $secretKey

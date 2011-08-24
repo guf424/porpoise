@@ -12,7 +12,7 @@
  * @package PorPOISe
  */
 
-/* 
+/*
  * Change working directory to where the rest of PorPOISe resides.
  *
  * For security reasons it is advisable to make only this file

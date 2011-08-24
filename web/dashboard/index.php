@@ -36,32 +36,32 @@ try {
 	}
 	/* handle action */
 	switch($_action) {
-	case "main":
-		GUI::printMessage("%s", GUI::createMainScreen());
-		break;
-	case "layer":
-		GUI::printMessage("%s", GUI::createLayerScreen($_REQUEST["layerName"]));
-		break;
-	case "poi":
-		$poi = DML::getPOI($_REQUEST["layerName"], $_REQUEST["poiID"]);
-		if (empty($poi)) {
-			throw new Exception(sprintf("POI not found: %s:%s", $_REQUEST["layerName"], $_REQUEST["poiID"]));
-		}
-		GUI::printMessage("%s", GUI::createPOIScreen($_REQUEST["layerName"], $poi));
-		break;
-	case "newPOI":
-		GUI::printMessage("%s", GUI::createNewPOIScreen($_REQUEST["layerName"]));
-		break;
-	case "migrate":
-		GUI::printMessage("%s", GUI::createMigrationScreen());
-		break;
-	default:
-		throw new Exception(sprintf("Invalid action: %s", $_action));
+            case "main":
+				GUI::printMessage("%s", GUI::createMainScreen());
+            break;
+            case "layer":
+				GUI::printMessage("%s", GUI::createLayerScreen($_REQUEST["layerName"]));
+            break;
+            case "poi":
+				$poi = DML::getPOI($_REQUEST["layerName"], $_REQUEST["poiID"]);
+				if (empty($poi)) {
+					throw new Exception(sprintf("POI not found: %s:%s", $_REQUEST["layerName"], $_REQUEST["poiID"]));
+				}
+				GUI::printMessage("%s", GUI::createPOIScreen($_REQUEST["layerName"], $poi));
+            break;
+            case "newPOI":
+				GUI::printMessage("%s", GUI::createNewPOIScreen($_REQUEST["layerName"]));
+            break;
+            case "migrate":
+				GUI::printMessage("%s", GUI::createMigrationScreen());
+            break;
+            default:
+                throw new Exception(sprintf("Invalid action: %s", $_action));
 	}
 } catch (Exception $e) {
 	GUI::printError("%s", $e->getMessage());
 	GUI::printMessage("%s", GUI::createMainScreen());
-}	
+}
 exit();
 
 $pois = DML::getPOIs("example");

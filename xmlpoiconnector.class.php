@@ -93,6 +93,7 @@ class XMLPOIConnector extends POIConnector {
 					$result->$name = (bool)((string)$childNode);
 					break;
 				case "showMessage":
+				case "biwStyle":
 					$result->$name = (string)$childNode;
 					break;
 				case "action":
@@ -124,7 +125,7 @@ class XMLPOIConnector extends POIConnector {
 		libxml_use_internal_errors($libxmlErrorHandlingState);
 
 		return $result;
-	}		
+	}
 
 	/**
 	 * Provides an XPath query for finding POIs in the source file.
@@ -133,7 +134,7 @@ class XMLPOIConnector extends POIConnector {
 	 * This method can be overridden to use a different query.
 	 *
 	 * @param Filter $filter
-	 * 
+	 *
 	 * @return string
 	 */
 	public function buildQuery(Filter $filter = NULL) {
@@ -167,21 +168,19 @@ class XMLPOIConnector extends POIConnector {
 
 		$xpathQuery = $this->buildQuery($filter);
 		foreach ($simpleXML->xpath($xpathQuery) as $poiData) {
-			if (empty($poiData->dimension) || (int)$poiData->dimension == 1) {
-				$poi = new POI1D();
-			} else if ((int)$poiData->dimension == 2) {
-				$poi = new POI2D();
-			} else if ((int)$poiData->dimension == 3) {
-				$poi = new POI3D();
-			} else {
-				throw new Exception("Invalid dimension: " . (string)$poiData->dimension);
-			}
+			$poi = new POI();
 			foreach ($poiData->children() as $child) {
 				$nodeName = $child->getName();
 				if ($nodeName == "action") {
 					$poi->actions[] = new POIAction($child);
+				} else if ($nodeName == "anchor") {
+					$poi->anchor = new POIAnchor($child);
+				} else if ($nodeName == "icon") {
+					$poi->icon = new POIIcon($child);
 				} else if ($nodeName == "object") {
 					$poi->object = new POIObject($child);
+				} else if ($nodeName == "text") {
+					$poi->text = new POIText($child);
 				} else if ($nodeName == "transform") {
 					$poi->transform = new POITransform($child);
 				} else if ($nodeName == "animation") {
@@ -201,13 +200,8 @@ class XMLPOIConnector extends POIConnector {
 					switch($nodeName) {
 					case "dimension":
 					case "type":
-					case "alt":
 					case "relativeAlt":
 						$value = (int)$child;
-						break;
-					case "lat":
-					case "lon":
-						$value = (float)$child;
 						break;
 					case "showSmallBiw":
 					case "showBiwOnClick":
@@ -227,17 +221,20 @@ class XMLPOIConnector extends POIConnector {
 				if (!empty($filter->requestedPoiId) && $filter->requestedPoiId == $poi->id) {
 					// always return the requested POI at the top of the list to
 					// prevent cutoff by the 50 POI response limit
-					$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->lat), deg2rad($poi->lon));
+					$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->anchor->geolocation['lat']), deg2rad($poi->anchor->geolocation['lon']));
 					$requestedPOI = $poi;
 				} else if ($this->passesFilter($poi, $filter)) {
 					if (empty($radius)) {
-						$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->lat), deg2rad($poi->lon));
+						$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->anchor->geolocation['lat']), deg2rad($poi->anchor->geolocation['lon']));
 						$result[] = $poi;
-					} else {						
+					} else {
 						// verify if POI falls in bounding box (with 25% margin)
 						/** @todo handle wraparound */
-						if ($poi->lat >= $lat - $dlat && $poi->lat <= $lat + $dlat && $poi->lon >= $lon - $dlon && $poi->lon <= $lon + $dlon) {
-							$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->lat), deg2rad($poi->lon));
+
+						if (isset($poi->anchor->referenceImage)) {
+							$result[] = $poi;
+						} elseif ((float)$poi->anchor->geolocation['lat'] >= $lat - $dlat && $poi->anchor->geolocation['lat'] <= $lat + $dlat && $poi->anchor->geolocation['lon'] >= $lon - $dlon && $poi->anchor->geolocation['lon'] <= $lon + $dlon) {
+							$poi->distance = GeoUtil::getGreatCircleDistance(deg2rad($lat), deg2rad($lon), deg2rad($poi->anchor->geolocation['lat']), deg2rad($poi->anchor->geolocation['lon']));
 							// filter passed, see if radius allows for inclusion
 							if ($poi->distance < $radius + $accuracy) {
 								$result[] = $poi;
@@ -304,11 +301,12 @@ class XMLPOIConnector extends POIConnector {
 		$domXMLPOIsElement = dom_import_simplexml($simpleXMLPOIsElements[0]);
 		// look for high id in new set, see if it's higher than $maxID
 		foreach ($pois as $poi) {
+//print_r($poi);
 			if ($poi->id > $maxID) {
 				$maxID = $poi->id;
 			}
 		}
-		
+
 		// add POIs to result
 		foreach($pois as $poi) {
 			// see if POI is old or new
@@ -329,7 +327,7 @@ class XMLPOIConnector extends POIConnector {
 				$domXMLPOIsElement->appendChild($domElement);
 			} else {
 				$domXMLPOIsElement->replaceChild($domElement, dom_import_simplexml($oldSimpleXMLElements[0]));
-			}				
+			}
 		}
 
 		if ($asString) {
@@ -400,7 +398,7 @@ class XMLPOIConnector extends POIConnector {
 			$poisDom = $dom->ownerDocument->importNode(dom_import_simplexml($poisSimpleXML), TRUE);
 			$dom->appendChild($poisDom);
 		}
-    unset($simpleXML->action);
+		unset($simpleXML->action);
 		unset($simpleXML->animation);
 
 		$relevantFields = array("refreshInterval", "refreshDistance", "fullRefresh", "showMessage");
@@ -434,7 +432,7 @@ class XMLPOIConnector extends POIConnector {
 				}
 			}
 		}
-			
+
 
 		libxml_use_internal_errors($libxmlErrorHandlingState);
 
@@ -514,13 +512,39 @@ class XMLPOIConnector extends POIConnector {
 				}
 			} else if ($key == "transform") {
 				$transformElement = $poiElement->addChild("transform");
-				foreach(array("rel", "angle", "scale") as $elementName) {
-					$transformElement->addChild($elementName, str_replace("&", "&amp;", $poi->transform->$elementName));
+				$rotateElement = $transformElement->addChild('rotate');
+				$rotateElement->addChild('rel', $poi->transform->rotate['rel']);
+				$axisElement = $rotateElement->addChild('axis');
+				foreach(array('x','y','z') as $elementName) {
+					$axisElement->addChild($elementName, $poi->transform->rotate['axis'][$elementName]);
 				}
+				$rotateElement->addChild('angle', $poi->transform->rotate['angle']);
+				$translateElement = $transformElement->addChild('translate');
+				foreach(array('x','y','z') as $elementName) {
+					$translateElement->addChild($elementName, $poi->transform->translate[$elementName]);
+				}
+				$transformElement->addChild('scale', $poi->transform->scale);
 			} else if ($key == "object") {
 				$objectElement = $poiElement->addChild("object");
-				foreach(array("baseURL", "full", "reduced", "icon", "size") as $elementName) {
+				foreach(array("url", "reducedURL", "contentType", "size") as $elementName) {
 					$objectElement->addChild($elementName, str_replace("&", "&amp;", $poi->object->$elementName));
+				}
+			} else if ($key == 'anchor') {
+				$anchorElement = $poiElement->addChild("anchor");
+				$anchorElement->addChild('referenceImage', $poi->anchor->referenceImage);
+				$geolocationElement = $anchorElement->addChild('geolocation');
+				foreach (array('lat','lon','alt') as $elementName){
+					$geolocationElement->addChild($elementName, $poi->anchor->geolocation[$elementName]);
+				}
+			} else if ($key == 'text') {
+				$textElement = $poiElement->addChild("text");
+				foreach (array('description','footnote','title') as $elementName){
+					$textElement->addChild($elementName, $poi->text->$elementName);
+				}
+			} else if ($key == 'icon') {
+				$iconElement = $poiElement->addChild("icon");
+				foreach (array('url','type') as $elementName){
+					$iconElement->addChild($elementName, $poi->icon->$elementName);
 				}
 			} else {
 				$poiElement->addChild($key, str_replace("&", "&amp;", $value));
@@ -540,7 +564,7 @@ class XMLPOIConnector extends POIConnector {
 		if ($xsl->load($this->styleSheetPath) == FALSE) {
 			throw new Exception("transformXML - Failed to load stylesheet");
 		}
-		$xslProcessor->importStyleSheet($xsl);   
+		$xslProcessor->importStyleSheet($xsl);
 		$xml = new DOMDocument();
 		if ($xml->load($this->source) == FALSE) {
 			throw new Exception("transformXML - Failed to load xml");

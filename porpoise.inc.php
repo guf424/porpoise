@@ -18,6 +18,8 @@ require_once("config.php");
 
 /** Geographic utilities */
 require_once("geoutil.class.php");
+/** Miscellaneous utilities */
+require_once("util.class.php");
 /** Miscellaneous functions */
 require_once("functions.php");
 
@@ -33,7 +35,6 @@ require_once("poiconnector.class.php");
 /** Base POIConnectors */
 require_once("sqlpoiconnector.class.php");
 require_once("xmlpoiconnector.class.php");
-require_once("flatpoiconnector.class.php");
 /** Web API and Web App */
 require_once("web-app.class.php");
 require_once("webapipoiconnector.class.php");

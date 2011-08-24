@@ -49,4 +49,6 @@ class LayarResponse {
 	public $errorCode = 0;
 	/** @var string */
 	public $errorString = "ok";
+	/** @var string biwStyle defines the default BIW to use as a default for all BIWs in the layer although they can be overruled on a per-POI-basis */
+	public $biwStyle = NULL;
 }
