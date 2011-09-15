@@ -1,3 +1,7 @@
+= Release 1.2beta =
+- Layar 6.0 (Layar Vision) support
+- Removed support for tab files, leaving just xml and sql als POI storage mechanisms
+
 = Release 1.1 =
 - Layar 5.0 support (animations)
 - proper UTF-8 handling (hopefully finally fixed). UTF-8 is now properly

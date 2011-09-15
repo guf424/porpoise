@@ -88,6 +88,10 @@ class LayarPOIServer {
 		"to" => NULL,
 		"axis" => array("x" => NULL, "y" => NULL, "z" => NULL)
 	);
+  protected $optionalTextFieldsDefaults = array(
+    "description" => "",
+    "footnote" => ""
+  );
 
 
 	/**
@@ -204,7 +208,7 @@ class LayarPOIServer {
 					if (array_sum($aPoi['anchor']['geolocation'])<1) {
 						unset($aPoi['anchor']['geolocation']);
 					}
-					if (count($aPoi["object"])<1) {
+					if (count($aPoi["object"]) < 1 || empty($aPoi["object"]["url"])) {
 						unset($aPoi["object"]);
 					} else {
 						foreach($this->optionalObjectFieldsDefaults as $field => $defaultValue) {
@@ -223,7 +227,10 @@ class LayarPOIServer {
 						unset($aPoi["icon"]);
 					}
 					if (array_sum($aPoi['transform']['rotate']['axis'])==0) {
-						unset($aPoi['transform']['rotate']);
+						unset($aPoi['transform']['rotate']['axis']);
+					}
+					if (array_sum($aPoi['transform']['translate'])==0) {
+						unset($aPoi['transform']['translate']);
 					}
 					foreach ($aPoi["animations"] as $event => &$animations) {
 						foreach ($animations as $k => &$animation) {
@@ -243,7 +250,11 @@ class LayarPOIServer {
 					if (!count($aPoi["animations"])) {
 						unset($aPoi["animations"]);
 					}
-					// upscale coordinate values and truncate to int because of inconsistencies in Layar API
+      		foreach ($this->optionalTextFieldsDefaults as $field => $defaultValue) {
+      			if (@$aPoi["text"][$field] == $defaultValue) {
+      				unset($aPoi["text"][$field]);
+      			}
+      		}
 
 					// fix some types that are not strings
 					$aPoi["distance"] = (float)$aPoi["distance"];

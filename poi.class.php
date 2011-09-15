@@ -248,14 +248,14 @@ class POITransform extends Arrayable {
 
 		if (is_array($source)) {
 			$this->rotate['rel'] = (bool)$source["rotate"]["rel"];
-			$this->rotate['angle'] = $source["rotate"]["angle"];
-			$this->rotate['axis']['x'] = $source["rotate"]["axis"]["x"];
-			$this->rotate['axis']['y'] = $source["rotate"]["axis"]["y"];
-			$this->rotate['axis']['z'] = $source["rotate"]["axis"]["z"];
-			$this->translate['x'] = $source["translate"]["x"];
-			$this->translate['y'] = $source["translate"]["y"];
-			$this->translate['z'] = $source["translate"]["z"];
-			$this->scale = $source["scale"];
+			$this->rotate['angle'] = (float)$source["rotate"]["angle"];
+			$this->rotate['axis']['x'] = (float)$source["rotate"]["axis"]["x"];
+			$this->rotate['axis']['y'] = (float)$source["rotate"]["axis"]["y"];
+			$this->rotate['axis']['z'] = (float)$source["rotate"]["axis"]["z"];
+			$this->translate['x'] = (float)$source["translate"]["x"];
+			$this->translate['y'] = (float)$source["translate"]["y"];
+			$this->translate['z'] = (float)$source["translate"]["z"];
+			$this->scale = (float)$source["scale"];
 		} else {
 			if (!empty($source->rotate)) {
 				$this->rotate['rel'] = (bool)(string)$source->rotate->rel;//) ? true : false;	/* SimpleXMLElement objects always get cast to TRUE even when representing an empty element */
@@ -339,7 +339,7 @@ class POIText extends Arrayable {
 
 
 /**
- * Holds transformation information for multi-dimensional POIs
+ * Holds POI anchor information
  *
  * @package PorPOISe
  */
@@ -357,10 +357,10 @@ class POIAnchor extends Arrayable {
 			return;
 		}
 		if (is_array($source)) {
-            $this->geolocation['lat'] = $source["geolocation"]["lat"];
-			$this->geolocation['lon'] = $source["geolocation"]["lon"];
-			$this->geolocation['alt'] = $source["geolocation"]["alt"];
-			$this->referenceImage = $source["referenceImage"];
+            $this->geolocation['lat'] = (float)$source["geolocation"]["lat"];
+			$this->geolocation['lon'] = (float)$source["geolocation"]["lon"];
+			$this->geolocation['alt'] = (float)$source["geolocation"]["alt"];
+			$this->referenceImage = (string)$source["referenceImage"];
 		} else {
 			$this->geolocation['lat'] = (float)$source->geolocation->lat;
 			$this->geolocation['lon'] = (float)$source->geolocation->lon;

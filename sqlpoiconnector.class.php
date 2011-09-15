@@ -86,10 +86,10 @@ class SQLPOIConnector extends POIConnector  {
 		}
 
 		$sql.=' FROM POI P , Layer L';
-		$aWhereClauses[]='P.layerID = L.id';
+		$aWhereClauses[]='P.LayerID = L.id';
 
 		if ($filter->layerName) {
-			$aWhereClauses[]="L.layer='".$filter->layerName."'";
+			$aWhereClauses[]="L.Layer='".$filter->layerName."'";
 		}
 
 		/*if (!empty($filter->requestedPoiId)) {
@@ -509,7 +509,7 @@ class SQLPOIConnector extends POIConnector  {
 	private function fetchLayerIdForName($sLayerName) {
 		if (!empty($sLayerName)) {
 			$pdo = $this->getPDO();
-			$sql = 'SELECT id FROM layer WHERE layer=:sLayerName';
+			$sql = 'SELECT id FROM Layer WHERE layer=:sLayerName';
 			$stmt = $pdo->prepare($sql);
 			$stmt->bindValue(":sLayerName", $sLayerName);
 			$stmt->setFetchMode(PDO::FETCH_ASSOC);
